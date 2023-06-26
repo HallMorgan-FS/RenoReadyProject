@@ -148,7 +148,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         
         //Set the properites
         cell.projectName_label.text = project.title
-        var imageName = project.category.lowercased().replacingOccurrences(of: " ", with: "")
+        let imageName = project.category.lowercased().replacingOccurrences(of: " ", with: "")
         cell.categoryIcon.image = UIImage(named: imageName)
         cell.deadline_label.text = project.deadline
         cell.remainingBudget_label.text = "$\(project.budget - project.totalSpent) Left"
@@ -186,7 +186,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     func deleteProject(projectIndexPath: IndexPath){
         
-        var project = projects[projectIndexPath.row]
+        let project = projects[projectIndexPath.row]
         
         //remove project from array
         projects.remove(at: projectIndexPath.row)
@@ -237,11 +237,11 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     //MARK: Navigation
     
     @IBAction func createProjectTapped(_ sender: UIButton) {
-        //Go to next segue
+        shouldPerformSegue(withIdentifier: "toNewProject", sender: self)
     }
     
     @IBAction func unwindToHome(_ unwindSegue: UIStoryboardSegue) {
-        let sourceViewController = unwindSegue.source as! ProjectFormViewController
+        _ = unwindSegue.source as! ProjectFormViewController
         // Use data from the view controller which initiated the unwind segue
         if let newProject = self.newProject{
             //Make sure that project doesn't already exist in the array
