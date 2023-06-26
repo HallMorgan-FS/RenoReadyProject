@@ -36,6 +36,8 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
     
     let db = Firestore.firestore()
     
+    var taskArray = [Task]()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -180,16 +182,42 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
     //MARK: Table View Methods
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        <#code#>
+        return taskArray.count
     }
     
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        <#code#>
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "task_reuseID", for: indexPath) as? TaskTableViewCell else {
+            return tableView.dequeueReusableCell(withIdentifier: "task_reuseID", for: indexPath)
+        }
+        
+        let currentTask = taskArray[indexPath.row]
+        cell.taskTitle_label.text = currentTask.task
+        
+        if (currentTask.isCompleted){
+            cell.taskCircle_imageView.image = UIImage(systemName: "circle.inset.filled")
+            cell.backgroundColor = UIColor(red: 150.0/255.0, green: 165.0/255.0, blue: 117.0/255.0, alpha: 1.0)
+        }
+        
+        return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        <#code#>
+        var currentTask = taskArray[indexPath.row]
+        
+        let alert = UIAlertController(title: "\(currentTask.task)", message: "How much did this item cost you?", preferredStyle: .alert)
+        
+        alert.addTextField { (textField : UITextField!) -> Void in
+            textField.placeholder = "$100"
+        }
+        
+        let okAction = UIAlertAction(title: "OK", style: .default) { _ in
+            let costTextField = alert.textFields![0] as UITextField
+            //convert the cost to a double
+        }
+        
+        
+        
     }
     
     
