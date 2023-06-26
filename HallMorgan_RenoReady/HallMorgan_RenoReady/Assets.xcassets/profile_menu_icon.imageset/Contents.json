@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "smallProfileIcon@0.1x-80px.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "profile_menu_icon_small@0.1x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "defaultProfile_icon_beige.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

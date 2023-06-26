@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>308355884977-if4mj6hveca1iouee0bc7g425km3leso.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.308355884977-if4mj6hveca1iouee0bc7g425km3leso</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDS3lbF-OYQzKh8ILZfGRtvxnmFMF1MMZQ</string>
+	<key>GCM_SENDER_ID</key>
+	<string>308355884977</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.fullsail.HallMorgan-RenoReady</string>
+	<key>PROJECT_ID</key>
+	<string>renoready</string>
+	<key>STORAGE_BUCKET</key>
+	<string>renoready.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:308355884977:ios:26a439dfad422181d9bf90</string>
+</dict>
+</plist>
