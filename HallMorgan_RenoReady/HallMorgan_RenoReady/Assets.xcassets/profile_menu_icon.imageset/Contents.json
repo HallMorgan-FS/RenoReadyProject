@@ -1,12 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "smallProfileIcon@0.1x-80px.png",
+      "filename" : "profile_menu_icon_small@0.1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "profile_menu_icon_small@0.1x.png",
+      "filename" : "defaultProfile_icon_beige 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },

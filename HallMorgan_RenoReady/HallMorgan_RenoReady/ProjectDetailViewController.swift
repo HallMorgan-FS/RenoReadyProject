@@ -9,7 +9,7 @@ import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
-class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate {
     
     
     @IBOutlet weak var categoryIcon_imageView: UIImageView!
@@ -26,109 +26,152 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
     
     @IBOutlet weak var deleteTaskButton: UIButton!
     
+    @IBOutlet weak var finishWithDeleteButton: UIButton!
+    
+    @IBOutlet weak var cancelEditingButton: UIButton!
+    
     @IBOutlet weak var noTasksView: UIView!
     
     @IBOutlet weak var tableView: UITableView!
     
     var projectID: String!
     
-    var project: Project?
+    var project: Project!
     
     let db = Firestore.firestore()
     
     var taskArray = [Task]()
     
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        //Fetch project with project ID
-        let projectRef = db.collection("users").document(Auth.auth().currentUser!.uid).collection("projects").document(projectID)
         
-        projectRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                if let project = self.project(from: document) {
-                    self.project = project
-                    //fetch the projects tasks
-                    if let taskIds = project.taskIds {
-                        self.fetchTasks(taskIDs: taskIds) { tasks in
-                            self.project?.tasks = tasks
-                            //Update UI with project data
-                            self.updateUI(with: project)
-                        }
-                    } else {
-                        self.updateUI(with: project)
+        tableView.allowsMultipleSelectionDuringEditing = true
+        
+        notes_textView.delegate = self
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.dismissKeyboard(_:)))
+        self.view.addGestureRecognizer(tapGesture)
+        
+        //Update the navigation bar title with the project name
+        navigationItem.title = project.title
+        
+        //Fetch tasks with project
+        if let taskIds = project.taskIds {
+            HelperMethods.fetchTasks(taskIDs: taskIds) { tasks in
+                self.project?.tasks = tasks
+                
+                for task in tasks {
+                    if task.isCompleted {
+                        self.project.totalSpent += task.taskCost
                     }
-                }
-            } else {
-                print("Document does not exist")
-            }
-        }
-        
-    }
-    
-    func project(from document: DocumentSnapshot) -> Project? {
-        var project: Project
-        if let projectData = document.data() {
-            let projectId = document.documentID
-            let title = projectData["title"] as? String ?? ""
-            let category = projectData["category"] as? String ?? ""
-            let deadline = projectData["deadline"] as? String ?? ""
-            let budget = projectData["budget"] as? Double ?? 0
-            let designNotes = projectData["notes"] as? String ?? ""
-            let taskIds = projectData["tasks"] as? [String]
-            
-            project = Project(projectID: projectId, title: title, category: category, deadline: deadline, budget: budget, tasks: nil, taskIds: taskIds)
-            
-            
-            return project
-        }
-        return nil
-    }
-    
-    func fetchTasks(taskIDs: [String], completion: @escaping ([Task]) -> Void) {
-        let tasksCollection = Firestore.firestore().collection("tasks")
-        let tasksDispatchGroup = DispatchGroup()
-        
-        var tasks: [Task] = []
-        
-        for taskID in taskIDs {
-            tasksDispatchGroup.enter()
-            
-            tasksCollection.document(taskID).getDocument { documentSnapshot, error in
-                if let error = error {
-                    print("Error fetching task: \(error)")
-                } else if let document = documentSnapshot {
-                    if let task = self.task(from: document){
-                        tasks.append(task)
-                    }
-                    
                 }
                 
-                tasksDispatchGroup.leave()
+                //Update UI with project data
+                self.updateUI()
+            }
+        } else {
+            self.updateUI()
+        }
+        
+    }
+    
+    @objc func dismissKeyboard(_ sender: UITapGestureRecognizer){
+        
+        project.designNotes = notes_textView.text
+        notes_textView.resignFirstResponder()
+        HelperMethods.saveNotesToFirestore(on: self, notes: notes_textView.text, project: project)
+    }
+    
+    
+    @IBAction func addTaskTapped(_ sender: UIButton) {
+        //Call the addTaskAlert
+        HelperMethods.addTaskAlert(on: self) { [weak self] (task: Optional<Task>) -> Void in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            guard let task = task else {
+                //Handle the case where no task was created (the user tapped cancel or didn't enter a task in the task field)
+                //Show toast type of alert that no task was created
+                HelperMethods.showToast(on: strongSelf, message: "No task was entered. No task was created.")
+                return
+            }
+            
+            //Task was created and stored to FIrebase.
+           
+            //Add that task to the projects document taskId array under the updated projectID
+            HelperMethods.addTaskToProject(projectID: strongSelf.project.projectID, taskId: task.taskId) { (error) in
+                if let error = error {
+                    print("Error adding task to Firestore: \(error.localizedDescription)")
+                    HelperMethods.showBasicErrorAlert(on: strongSelf, title: "Error Storing Task to \(strongSelf.project.title)", message: error.localizedDescription)
+                } else {
+                    //Only update the project's task array if task was successfully added to firestore
+                    
+                    //Update the project's task array
+                    if strongSelf.project.tasks == nil {
+                        strongSelf.project.tasks = [task]
+                    } else {
+                        strongSelf.project.tasks?.append(task)
+                    }
+                    
+                    //Reload the tableView
+                    strongSelf.tableView.reloadData()
+                }
+            }
+            
+            strongSelf.taskArray.append(task)
+            //Reload the tableView
+            strongSelf.tableView.reloadData()
+        }
+    }
+    
+    @IBAction func deleteTaskTapped(_ sender: UIButton) {
+        //put the table view into editing mode
+        HelperMethods.editTaskTableView(tableView: tableView, addButton: addTaskButton, editButton: deleteTaskButton, deleteButton: finishWithDeleteButton, cancelButton: cancelEditingButton)
+        
+    }
+    
+    @IBAction func deleteSelectedTasksTapped(_ sender: UIButton) {
+        
+        //Calculate total cost of selected tasks that are completed
+        var costOfSelectedCompletedTasks: Double = 0
+        if let selectedIndexPaths = tableView.indexPathsForSelectedRows {
+            for path in selectedIndexPaths {
+                let task = project.tasks![path.row]
+                if task.isCompleted {
+                    costOfSelectedCompletedTasks += task.taskCost
+                }
             }
         }
         
-        tasksDispatchGroup.notify(queue: .main) {
-            completion(tasks)
+        //Delete the tasks and update the UI
+        HelperMethods.deleteSelectedTasks(on: self, tableView: tableView, addButton: addTaskButton, editButton: deleteTaskButton, deleteButton: finishWithDeleteButton, cancelButton: cancelEditingButton, tasks: project.tasks!) { newTasks in
+            //update the tasks array
+            self.project.tasks = newTasks
+            
+            //Subtract the cost of the deleted completed tasks from total spent
+            self.project.totalSpent -= costOfSelectedCompletedTasks
+            
+            //Update the UI
+            self.updateUI()
         }
     }
     
-    func task(from document: DocumentSnapshot) -> Task? {
-        if let taskData = document.data(){
-            let taskId = document.documentID
-            if let task = taskData["task"] as? String,
-               let isCompleted = taskData["isCompleted"] as? Bool{
-                let taskCost = taskData["taskCost"] as? Double
-                return Task(taskId: taskId, task: task, isCompleted: isCompleted, taskCost: taskCost)
-            }
-               
-        }
-        return nil
+    @IBAction func cancelEditingTapped(_ sender: UIButton) {
+        HelperMethods.quitEditing(tableView: tableView, addButton: addTaskButton, editButton: deleteTaskButton, deleteButton: finishWithDeleteButton, cancelButton: cancelEditingButton)
     }
     
-    func updateUI(with project: Project){
+    
+    
+    func updateUI(){
+        
+        categoryIcon_imageView.image = UIImage(named: HelperMethods.getCategoryImageName(projectCategory: project.category))
+        
         if let designNotes = project.designNotes {
             //Display the design notes
             notes_textView.text = designNotes
@@ -139,43 +182,48 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         //update deadline
         deadline_label.text = project.deadline
         
-        budget_label.text = project.budget.description
+        budget_label.text = HelperMethods.formatNumberToCurrency(value: project.budget)
         
-        var totalCost = 0.00
+        
         
         if let tasks = project.tasks, !tasks.isEmpty {
+            taskArray = tasks
             // Display the tasks
             noTasksView.isHidden = true
             tableView.isHidden = false
-            for task in tasks {
-                if task.isCompleted {
-                    if let taskCost = task.taskCost{
-                        totalCost += taskCost
-                    }
-                }
-            }
+            addTaskButton.isHidden = false
+            deleteTaskButton.isHidden = false
+            cancelEditingButton.isHidden = true
+            finishWithDeleteButton.isHidden = true
             
-            totalSpent_label.text = totalCost.description
+            tableView.reloadData()
             
         } else {
             // Display "No tasks" message
             noTasksView.isHidden = false
             tableView.isHidden = true
+            addTaskButton.isHidden = true
+            deleteTaskButton.isHidden = true
+            cancelEditingButton.isHidden = true
+            finishWithDeleteButton.isHidden = true
         }
         
+        totalSpent_label.text = HelperMethods.formatNumberToCurrency(value: project.totalSpent)
+        if project.totalSpent <= project.budget {
+            //Make the text green if the totalSpent  is less than or equal to the budget
+            totalSpent_label.textColor = UIColor.darkGreen
+        } else {
+            //Make the text red and bold if it is over the budget
+            totalSpent_label.textColor = UIColor.red
+            totalSpent_label.font = UIFont.boldSystemFont(ofSize: totalSpent_label.font.pointSize)
+        }
         
-    }
-    
-    
-    
-    @IBAction func addTaskTapped(_ sender: UIButton) {
-    }
-    
-    @IBAction func deleteTaskTapped(_ sender: UIButton) {
     }
     
     
     @IBAction func editProjectTapped(_ sender: UIBarButtonItem) {
+        // Go to create project screen
+        self.performSegue(withIdentifier: "toEditProject", sender: self)
     }
     
     
@@ -196,40 +244,66 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         
         if (currentTask.isCompleted){
             cell.taskCircle_imageView.image = UIImage(systemName: "circle.inset.filled")
-            cell.backgroundColor = UIColor(red: 150.0/255.0, green: 165.0/255.0, blue: 117.0/255.0, alpha: 1.0)
+            cell.backgroundColor = UIColor.darkGreen
+            //Add a strikethrough to the text
+            let attributedString: NSMutableAttributedString = NSMutableAttributedString(string: currentTask.task)
+            attributedString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSMakeRange(0, attributedString.length))
+            cell.taskTitle_label.attributedText = attributedString
+        } else {
+            //Change background color to white for uncompleted tasks
+            cell.backgroundColor = UIColor.white
+            
+            //Remove the strickethrough from the text
+            cell.taskTitle_label.text = currentTask.task
         }
         
         return cell
     }
+
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        var currentTask = taskArray[indexPath.row]
         
-        let alert = UIAlertController(title: "\(currentTask.task)", message: "How much did this item cost you?", preferredStyle: .alert)
+        let selectedTask = taskArray[indexPath.row]
+        //Update the task based on the tap and update in Firestore
+        HelperMethods.updateTaskWhenTapped(selectedTask: selectedTask, totalSpent: &project.totalSpent)
         
-        alert.addTextField { (textField : UITextField!) -> Void in
-            textField.placeholder = "$100"
-        }
+        //Sort taks so that the completed tasks are at the bottom
+        taskArray.sort { !$0.isCompleted && $1.isCompleted }
         
-        let okAction = UIAlertAction(title: "OK", style: .default) { _ in
-            let costTextField = alert.textFields![0] as UITextField
-            //convert the cost to a double
-        }
+        //Assign the sorted taks back to _project.tasks
+        project.tasks = taskArray
         
+        tableView.reloadData()
         
-        
+        updateUI()
     }
     
-    
+    @IBAction func unwindToDetails(_ unwindSegue: UIStoryboardSegue) {
+        guard let sourceViewController = unwindSegue.source as? ProjectFormViewController else {
+            return
+        }
+        
+        // Access the new project object from the source view controller
+        if let newProject = sourceViewController.project {
+            self.project = newProject
+            updateUI()
+        }
+    }
 
-    /*
+    
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+        // Check segue identifier
+        if segue.identifier == "toEditProject" {
+            // Get the new view controller using segue.destination.
+            let destinationVC = segue.destination as! ProjectFormViewController
+            // Pass the selected object to the new view controller.
+            destinationVC.project = self.project
+            destinationVC.isEditMode = true
+        }
     }
-    */
+    
 
 }

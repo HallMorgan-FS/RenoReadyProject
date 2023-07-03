@@ -12,4 +12,5 @@ extension UIColor {
     
     static let darkBrown = UIColor(red: 79.0/255.0, green: 63.0/255.0, blue: 13.0/255.0, alpha: 1.0)
     static let cremeWhite = UIColor(red: 253.0/255.0, green: 248.0/255.0, blue: 237.0/255.0, alpha: 1.0)
+    static let darkGreen = UIColor(red: 102.0/255.0, green: 162.0/255.0, blue: 52.0/255.0, alpha: 1.0)
 }

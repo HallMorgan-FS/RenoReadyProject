@@ -22,6 +22,7 @@
 		3B9FE2E52A49219D0058932D /* ProjectDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9FE2E42A49219D0058932D /* ProjectDetailViewController.swift */; };
 		3B9FE2E72A4921AB0058932D /* ProjectFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9FE2E62A4921AB0058932D /* ProjectFormViewController.swift */; };
 		3B9FE2E92A4921B90058932D /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9FE2E82A4921B90058932D /* ProfileViewController.swift */; };
+		3B9FE2EB2A52A9470058932D /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9FE2EA2A52A9470058932D /* NetworkManager.swift */; };
 		3BA7E6402A44D92300D4ED96 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA7E63F2A44D92300D4ED96 /* AppDelegate.swift */; };
 		3BA7E6422A44D92300D4ED96 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA7E6412A44D92300D4ED96 /* SceneDelegate.swift */; };
 		3BA7E6442A44D92300D4ED96 /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA7E6432A44D92300D4ED96 /* LoginViewController.swift */; };
@@ -42,6 +43,7 @@
 		3B9FE2E42A49219D0058932D /* ProjectDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailViewController.swift; sourceTree = "<group>"; };
 		3B9FE2E62A4921AB0058932D /* ProjectFormViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFormViewController.swift; sourceTree = "<group>"; };
 		3B9FE2E82A4921B90058932D /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
+		3B9FE2EA2A52A9470058932D /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		3BA7E63C2A44D92300D4ED96 /* HallMorgan_RenoReady.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HallMorgan_RenoReady.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BA7E63F2A44D92300D4ED96 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		3BA7E6412A44D92300D4ED96 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				3B9FE2E42A49219D0058932D /* ProjectDetailViewController.swift */,
 				3B9FE2E62A4921AB0058932D /* ProjectFormViewController.swift */,
 				3B9FE2E82A4921B90058932D /* ProfileViewController.swift */,
+				3B9FE2EA2A52A9470058932D /* NetworkManager.swift */,
 			);
 			path = HallMorgan_RenoReady;
 			sourceTree = "<group>";
@@ -207,6 +210,7 @@
 				3B9FE2D82A4674CE0058932D /* HelperMethods.swift in Sources */,
 				3B9FE2DD2A47FD400058932D /* User.swift in Sources */,
 				3B9FE2D42A46673D0058932D /* SignUp_ViewController.swift in Sources */,
+				3B9FE2EB2A52A9470058932D /* NetworkManager.swift in Sources */,
 				3B9FE2E92A4921B90058932D /* ProfileViewController.swift in Sources */,
 				3BA7E6422A44D92300D4ED96 /* SceneDelegate.swift in Sources */,
 				3B9FE2D62A46676D0058932D /* ProjectOverview_ViewController.swift in Sources */,

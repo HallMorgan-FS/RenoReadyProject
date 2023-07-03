@@ -32,6 +32,7 @@ class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        HelperMethods.checkNetwork(on: self)
         let buttonArray = [newUser_signUp_button, forgotPassword_button]
         for button in buttonArray {
             guard let buttonText = button?.currentTitle else { return }
@@ -131,6 +132,10 @@ class LoginViewController: UIViewController {
             return didSignIn
         }
         return true
+    }
+    
+    @IBAction func unwindToLogin(_ segue: UIStoryboardSegue) {
+        // This method will be called when the user logs out
     }
     
     

@@ -24,18 +24,11 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     var newProject: Project?
     
-    /*MARK: TODO:
-     MARK: Get current user.
-     MARK: Get User data.
-     MARK: Load tableView.
-     MARK: Create cells.
-     MARK: Create categories.
-     MARK: Create view and form page.
-     MARK: Create Profile Screen
-     */
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        HelperMethods.checkNetwork(on: self)
 
         // Do any additional setup after loading the view.
         
@@ -47,6 +40,10 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         //Check if the current user has any projects saved
         getCurrentUserAndProjects()
         
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        getCurrentUserAndProjects()
     }
     
     private func getCurrentUserAndProjects(){
@@ -76,7 +73,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
                             
                             projectRef.getDocument { (projectDocument, error) in
                                 if let projectDocument = projectDocument, projectDocument.exists{
-                                    if let project = self.project(from: projectDocument){
+                                    if let project = HelperMethods.project(from: projectDocument){
                                         
                                         //add to projects array
                                         self.projects.append(project)
@@ -104,20 +101,6 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         
     }
     
-    func project(from document: DocumentSnapshot) -> Project? {
-        if let projectData = document.data() {
-            let projectId = document.documentID
-            let title = projectData["title"] as? String ?? ""
-            let category = projectData["category"] as? String ?? ""
-            let deadline = projectData["deadline"] as? String ?? ""
-            let budget = projectData["budget"] as? Double ?? 0
-            
-            let project = Project(projectID: projectId, title: title, category: category, deadline: deadline, budget: budget)
-            return project
-        }
-        return nil
-    }
-
     
     @IBAction func editTapped(_ sender: UIButton) {
         //Toggle the editing mode
@@ -239,22 +222,6 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     @IBAction func createProjectTapped(_ sender: UIButton) {
         shouldPerformSegue(withIdentifier: "toNewProject", sender: self)
     }
-    
-    @IBAction func unwindToHome(_ unwindSegue: UIStoryboardSegue) {
-        _ = unwindSegue.source as! ProjectFormViewController
-        // Use data from the view controller which initiated the unwind segue
-        if let newProject = self.newProject{
-            //Make sure that project doesn't already exist in the array
-            if !projects.contains(where: { $0.projectID == newProject.projectID }) {
-                // If the project is not in the array, append it
-                projects.append(newProject)
-                //Reload tableView
-                projects_tableView.reloadData()
-                updateProjectUI()
-            }
-        }
-    }
-    
     
     
     // MARK: - Navigation

@@ -37,9 +37,10 @@ class Project {
     var totalSpent = 0.00
     var tasks: [Task]?
     var photos: [UIImage]?
+    var photoIds: [String]?
     var taskIds: [String]?
     
-    init(projectID: String, title: String, category: String, designNotes: String? = nil, deadline: String, budget: Double, tasks: [Task]? = nil, photos: [UIImage]? = nil, taskIds: [String]? = nil ) {
+    init(projectID: String, title: String, category: String, designNotes: String? = nil, deadline: String, budget: Double, tasks: [Task]? = nil, photos: [UIImage]? = nil, photoIds: [String]? = nil, taskIds: [String]? = nil ) {
         self.projectID = projectID
         self.title = title
         self.category = category
@@ -48,11 +49,36 @@ class Project {
         self.budget = budget
         self.tasks = tasks
         self.photos = photos
+        self.photoIds = photoIds
         self.taskIds = taskIds
     }
     
     convenience init(projectID: String, title: String, category: String, deadline: String, budget: Double) {
-        self.init(projectID: projectID, title: title, category: category, designNotes: nil, deadline: deadline, budget: budget, tasks: nil, photos: nil, taskIds: nil)
+        self.init(projectID: projectID, title: title, category: category, designNotes: nil, deadline: deadline, budget: budget, tasks: nil, photos: nil, photoIds: nil, taskIds: nil)
+    }
+    
+    func toDictionary() -> [String: Any] {
+        var dictionary: [String: Any] = [
+            "projectID": self.projectID,
+            "title": self.title,
+            "category": self.category,
+            "deadline": self.deadline,
+            "budget": self.budget,
+            "totalSpent": self.totalSpent
+        ]
+        
+        // Only add these properties to the dictionary if they're not nil
+        if let designNotes = self.designNotes {
+            dictionary["designNotes"] = designNotes
+        }
+        if let taskIds = self.taskIds {
+            dictionary["taskIds"] = taskIds
+        }
+        if let photoIds = self.photoIds {
+            dictionary["photoIds"] = photoIds
+        }
+        
+        return dictionary
     }
     
 }
@@ -61,10 +87,10 @@ class Task {
     var taskId: String
     var task: String
     var isCompleted: Bool
-    var taskCost: Double?
+    var taskCost = 0.00
     
     
-    public init(taskId: String, task: String, isCompleted: Bool, taskCost: Double? = nil) {
+    public init(taskId: String, task: String, isCompleted: Bool, taskCost: Double) {
         self.taskId = taskId
         self.task = task
         self.isCompleted = isCompleted
@@ -72,7 +98,12 @@ class Task {
         
     }
     
-    convenience init(taskId: String, task: String, isCompleted: Bool) {
-        self.init(taskId: taskId, task: task, isCompleted: isCompleted, taskCost: nil)
+    // Add this method:
+    func toDictionary() -> [String: Any] {
+        return [
+            "task" : self.task,
+            "isCompleted" : self.isCompleted,
+            "taskCost" : self.taskCost
+        ]
     }
 }
