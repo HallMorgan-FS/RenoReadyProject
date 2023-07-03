@@ -92,6 +92,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         //Add a done button to the date picker
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
         let doneButton = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneButtonClicked))
         toolbar.setItems([doneButton], animated: true)
         date_textField.inputAccessoryView = toolbar
@@ -106,10 +107,19 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
         // Set the text field's text to the formatted date string
         date_textField.text = dateFormatter.string(from: sender.date)
+        print("Date changed: \(date_textField.text ?? "")")
     }
     
     @objc func doneButtonClicked(){
         date_textField.resignFirstResponder()
+        // Format the date from the date picker into a string
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/dd/yyyy"
+        dateFormatter.timeStyle = .none
+        
+        // Set the text field's text to the formatted date string
+        date_textField.text = dateFormatter.string(from: datePicker.date)
+        
     }
     
     @objc func dismissKeyboard(_ sender: UITapGestureRecognizer){

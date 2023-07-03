@@ -123,7 +123,6 @@ class HelperMethods {
         }
         alert.addTextField { (textField) in
             textField.placeholder = "How much will task cost?"
-            textField.keyboardType = .decimalPad
         }
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
