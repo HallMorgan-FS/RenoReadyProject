@@ -268,7 +268,7 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         HelperMethods.updateTaskWhenTapped(selectedTask: selectedTask, totalSpent: &project.totalSpent)
         
         //Sort taks so that the completed tasks are at the bottom
-        taskArray.sort { !$0.isCompleted && $1.isCompleted }
+        taskArray.sort { $0.isCompleted && !$1.isCompleted }
         
         //Assign the sorted taks back to _project.tasks
         project.tasks = taskArray

@@ -33,7 +33,6 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
         // Do any additional setup after loading the view.
         // Clip profile picture to a circle shape
-        profilePicture.layer.cornerRadius = profilePicture.frame.width / 2
         profilePicture.clipsToBounds = true
         //Add observers to only scroll while the keyboard is showing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -128,7 +127,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         uploadMetadata.contentType = "image/jpeg"
         
         // Upload the photo to Firebase Storage
-        let uploadTask = userPhotosRef.putData(imageData, metadata: uploadMetadata) { metadata, error in
+        _ = userPhotosRef.putData(imageData, metadata: uploadMetadata) { metadata, error in
             if let error = error {
                 self.showAlert(error.localizedDescription)
             }
@@ -252,8 +251,16 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         if let pickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            profilePicture.contentMode = .scaleAspectFill
-            profilePicture.image = pickedImage
+            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 150, height: 150)) {
+                if let resizedImage = UIImage(data: resizedImageData) {
+                    profilePicture.contentMode = .scaleAspectFill
+                    profilePicture.image = resizedImage
+                } else {
+                    print("Error creating resized image from data")
+                }
+            } else {
+                print("Error resizing and compressing image")
+            }
         }
         
         picker.dismiss(animated: true, completion: nil)

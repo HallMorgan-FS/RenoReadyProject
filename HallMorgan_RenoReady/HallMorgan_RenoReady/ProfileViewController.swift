@@ -9,6 +9,8 @@ import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
+import Photos
+import AVFoundation
 
 class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -22,6 +24,8 @@ class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePicke
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        profilePicture_imageView.clipsToBounds = true
 
         // Do any additional setup after loading the view.
         //Add tap gesture for the image view
@@ -217,99 +221,158 @@ Password Must:
     // MARK: PROFILE PHOTO - IMAGE PICKER METHODS
     
     @objc func imageTapped() {
-        
-        //Check camera and photo library access
-        HelperMethods.checkCameraOrPhotoLibraryAccess(on: self)
-        
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        actionSheet.addAction(UIAlertAction(title: "Take Photo", style: .default, handler: { _ in
-            self.openCamera()
-        }))
-        actionSheet.addAction(UIAlertAction(title: "Choose from Library", style: .default, handler: { _ in
-            self.openPhotoLibrary()
-        }))
+        
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            actionSheet.addAction(UIAlertAction(title: "Take Photo", style: .default, handler: { _ in
+                self.openCamera()
+            }))
+        }
+        
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+            actionSheet.addAction(UIAlertAction(title: "Choose from Library", style: .default, handler: { _ in
+                self.openPhotoLibrary()
+            }))
+        }
+        
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         
         self.present(actionSheet, animated: true, completion: nil)
     }
-    
 
     private func openCamera() {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else { return }
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .camera
-        self.present(imagePicker, animated: true, completion: nil)
+        
+        AVCaptureDevice.requestAccess(for: .video) { granted in
+            DispatchQueue.main.async {
+                if granted {
+                    let imagePicker = UIImagePickerController()
+                    imagePicker.delegate = self
+                    imagePicker.sourceType = .camera
+                    self.present(imagePicker, animated: true, completion: nil)
+                } else {
+                    self.showCameraAccessDeniedAlert()
+                }
+            }
+        }
     }
 
     private func openPhotoLibrary() {
         guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .photoLibrary
-        self.present(imagePicker, animated: true, completion: nil)
+        
+        PHPhotoLibrary.requestAuthorization { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized:
+                    let imagePicker = UIImagePickerController()
+                    imagePicker.delegate = self
+                    imagePicker.sourceType = .photoLibrary
+                    self.present(imagePicker, animated: true, completion: nil)
+                case .denied, .restricted:
+                    self.showPhotoLibraryAccessDeniedAlert()
+                case .notDetermined:
+                    break
+                case .limited:
+                    self.showLimitedAccessAlert()
+                @unknown default:
+                    break
+                }
+            }
+        }
     }
     
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+    private func showLimitedAccessAlert() {
+        let alert = UIAlertController(
+            title: "Limited Access",
+            message: "Your access to the photo library is limited. To grant full access, please follow these steps:\n\n1. Open the Settings app.\n2. Navigate to Privacy > Photos.\n3. Enable access to Photos for this app.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        
+        present(alert, animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         if let pickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            profilePicture_imageView.contentMode = .scaleAspectFill
-            profilePicture_imageView.image = pickedImage
-            
-            // Get the current user's UID
-            guard let uid = Auth.auth().currentUser?.uid else {
-                showAlert("User is not logged in.")
-                return
-            }
-            
-            // Create a reference to the Firebase Storage
-            let storage = Storage.storage()
-            
-            // Convert the picked image to data
-            guard let imageData = pickedImage.jpegData(compressionQuality: 0.75) else {
-                showAlert("Failed to convert image to data.")
-                return
-            }
-            
-            // Create a storage reference for the profile image
-            let userPhotosRef = storage.reference().child("\(uid)/profile_images/profile_photo.jpg")
-            
-            // Create the upload metadata
-            let uploadMetadata = StorageMetadata()
-            uploadMetadata.contentType = "image/jpeg"
-            
-            // Upload the photo to Firebase Storage
-            _ = userPhotosRef.putData(imageData, metadata: uploadMetadata) { metadata, error in
-                if let error = error {
-                    self.showAlert("Failed to upload profile photo: \(error.localizedDescription)")
+            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 150, height: 150)) {
+                profilePicture_imageView.contentMode = .scaleAspectFill
+                profilePicture_imageView.image = UIImage(data: resizedImageData)
+                
+                // Get the current user's UID
+                guard let uid = Auth.auth().currentUser?.uid else {
+                    showAlert("User is not logged in.")
                     return
                 }
                 
-                // Once the upload is complete, get the download URL
-                userPhotosRef.downloadURL { url, error in
-                    if let urlError = error {
-                        self.showAlert("Error getting download URL: \(urlError.localizedDescription)")
+                // Create a reference to the Firebase Storage
+                let storage = Storage.storage()
+                
+                // Create a storage reference for the profile image
+                let userPhotosRef = storage.reference().child("\(uid)/profile_images/profile_photo.jpg")
+                
+                // Create the upload metadata
+                let uploadMetadata = StorageMetadata()
+                uploadMetadata.contentType = "image/jpeg"
+                
+                // Upload the photo to Firebase Storage
+                _ = userPhotosRef.putData(resizedImageData, metadata: uploadMetadata) { metadata, error in
+                    if let error = error {
+                        self.showAlert("Failed to upload profile photo: \(error.localizedDescription)")
                         return
                     }
                     
-                    guard let url = url else {
-                        print("URL was nil")
-                        return
-                    }
-                    
-                    // Update the profile photo URL in Firestore
-                    let db = Firestore.firestore()
-                    db.collection("users").document(uid).updateData(["profile_photo_url": url.absoluteString]) { error in
-                        if let firestoreError = error {
-                            self.showAlert("Failed to update profile photo URL in Firestore: \(firestoreError.localizedDescription)")
-                        } else {
-                            print("Profile photo updated successfully.")
+                    // Once the upload is complete, get the download URL
+                    userPhotosRef.downloadURL { url, error in
+                        if let urlError = error {
+                            self.showAlert("Error getting download URL: \(urlError.localizedDescription)")
+                            return
+                        }
+                        
+                        guard let url = url else {
+                            print("URL was nil")
+                            return
+                        }
+                        
+                        // Update the profile photo URL in Firestore
+                        let db = Firestore.firestore()
+                        db.collection("users").document(uid).updateData(["profile_photo_url": url.absoluteString]) { error in
+                            if let firestoreError = error {
+                                self.showAlert("Failed to update profile photo URL in Firestore: \(firestoreError.localizedDescription)")
+                            } else {
+                                print("Profile photo updated successfully.")
+                            }
                         }
                     }
                 }
+            } else {
+                showAlert("Failed to resize and compress image.")
             }
         }
         
         picker.dismiss(animated: true, completion: nil)
+    }
+
+    private func showPhotoLibraryAccessDeniedAlert() {
+        let alert = UIAlertController(title: "Photo Library Access Denied", message: "Please grant permission to access the photo library in Settings to select an image.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
+            if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
+    }
+
+    private func showCameraAccessDeniedAlert() {
+        let alert = UIAlertController(title: "Camera Access Denied", message: "Please grant permission to access the camera in Settings to take a photo.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
+            if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
 
     
