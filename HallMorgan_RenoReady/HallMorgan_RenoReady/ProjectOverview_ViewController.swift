@@ -22,7 +22,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     let db = Firestore.firestore()
     
-    var newProject: Project?
+    var selectedProject: Project?
     
     
     override func viewDidLoad() {
@@ -131,7 +131,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         
         //Set the properites
         cell.projectName_label.text = project.title
-        let imageName = project.category.lowercased().replacingOccurrences(of: " ", with: "")
+        let imageName = HelperMethods.getCategoryImageName(projectCategory: project.category)
         cell.categoryIcon.image = UIImage(named: imageName)
         cell.deadline_label.text = project.deadline
         cell.remainingBudget_label.text = "$\(project.budget - project.totalSpent) Left"
@@ -141,6 +141,9 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //Open detail view for that specific project
+        let selectedProject = projects[indexPath.row]
+        self.selectedProject = selectedProject
+        performSegue(withIdentifier: "toDetails", sender: self)
     }
     
     //MARK: Delete Project
@@ -233,7 +236,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
             let projectIdToSend = projects[indexPath.row].projectID
             
             if let destination = segue.destination as? ProjectDetailViewController{
-                destination.projectID = projectIdToSend
+                destination.project = selectedProject
             }
         }
     }

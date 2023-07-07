@@ -9,7 +9,7 @@ import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
-class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate {
+class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, UINavigationControllerDelegate {
     
     
     @IBOutlet weak var categoryIcon_imageView: UIImageView!
@@ -53,8 +53,14 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         
         notes_textView.delegate = self
         
+        // Create a custom back button
+                let backButton = UIBarButtonItem(title: "Back", style: .plain, target: self, action: #selector(goBackToOverview))
+                // Set the custom back button as the left bar button item
+                navigationItem.leftBarButtonItem = backButton
+        
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.dismissKeyboard(_:)))
         self.view.addGestureRecognizer(tapGesture)
+        tapGesture.cancelsTouchesInView = false
         
         //Update the navigation bar title with the project name
         navigationItem.title = project.title
@@ -77,14 +83,26 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
             self.updateUI()
         }
         
+        if let backButton = navigationItem.backBarButtonItem {
+            // Modify the backButton's target and action
+            backButton.target = self
+            backButton.action = #selector(goBackToOverview)
+        }
+        
     }
     
     @objc func dismissKeyboard(_ sender: UITapGestureRecognizer){
+        let tapLocation = sender.location(in: tableView)
+            if let _ = tableView.indexPathForRow(at: tapLocation) {
+                // Tapped inside a table view cell, skip keyboard dismissal
+                return
+            }
         
         project.designNotes = notes_textView.text
         notes_textView.resignFirstResponder()
         HelperMethods.saveNotesToFirestore(on: self, notes: notes_textView.text, project: project)
     }
+
     
     
     @IBAction func addTaskTapped(_ sender: UIButton) {
@@ -166,6 +184,10 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         HelperMethods.quitEditing(tableView: tableView, addButton: addTaskButton, editButton: deleteTaskButton, deleteButton: finishWithDeleteButton, cancelButton: cancelEditingButton)
     }
     
+    @objc func goBackToOverview(){
+        performSegue(withIdentifier: "toHomeScreen", sender: self)
+    }
+    
     
     
     func updateUI(){
@@ -180,7 +202,7 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         }
         
         //update deadline
-        deadline_label.text = project.deadline
+        deadline_label.text = "Deadline: \(project.deadline)"
         
         budget_label.text = HelperMethods.formatNumberToCurrency(value: project.budget)
         
@@ -250,11 +272,12 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
             attributedString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSMakeRange(0, attributedString.length))
             cell.taskTitle_label.attributedText = attributedString
         } else {
-            //Change background color to white for uncompleted tasks
+            cell.taskCircle_imageView.image = UIImage(systemName: "circle")
             cell.backgroundColor = UIColor.white
-            
-            //Remove the strickethrough from the text
-            cell.taskTitle_label.text = currentTask.task
+            // Remove the strikethrough from the text
+            let attributedString: NSMutableAttributedString = NSMutableAttributedString(string: currentTask.task)
+            attributedString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 0, range: NSMakeRange(0, attributedString.length))
+            cell.taskTitle_label.attributedText = attributedString
         }
         
         return cell
@@ -278,18 +301,6 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         updateUI()
     }
     
-    @IBAction func unwindToDetails(_ unwindSegue: UIStoryboardSegue) {
-        guard let sourceViewController = unwindSegue.source as? ProjectFormViewController else {
-            return
-        }
-        
-        // Access the new project object from the source view controller
-        if let newProject = sourceViewController.project {
-            self.project = newProject
-            updateUI()
-        }
-    }
-
     
     // MARK: - Navigation
 

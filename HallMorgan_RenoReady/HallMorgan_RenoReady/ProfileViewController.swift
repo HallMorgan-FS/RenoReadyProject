@@ -31,6 +31,60 @@ class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         //Add tap gesture for the image view
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         profilePicture_imageView.addGestureRecognizer(tapGesture)
+        
+        //Update UI
+        updateUI()
+    }
+    
+    func updateUI() {
+        // Get the current user's UID
+        guard let uid = Auth.auth().currentUser?.uid else {
+            showAlert("User is not logged in.")
+            return
+        }
+
+        // Create a reference to the Firestore database
+        let db = Firestore.firestore()
+
+        // Retrieve the user document from Firestore
+        db.collection("users").document(uid).getDocument { snapshot, error in
+            if let error = error {
+                self.showAlert("Failed to fetch user data: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let document = snapshot?.data() else {
+                self.showAlert("User document does not exist.")
+                return
+            }
+            
+            // Access the profile photo URL and email from the document
+            if let profilePhotoURL = document["profile_photo_url"] as? String,
+               let email = document["email"] as? String {
+                // Use the profile photo URL and email to update the UI
+                
+                self.email_label.text = email
+                
+                if let imageURL = URL(string: profilePhotoURL){
+                    URLSession.shared.dataTask(with: imageURL) { data, response, error in
+                        guard let imageData = data else {
+                            print("Failed to download image data: \(error?.localizedDescription ?? "")")
+                            return
+                        }
+                        
+                        // Create the image from the downloaded data
+                        if let image = UIImage(data: imageData) {
+                            DispatchQueue.main.async {
+                                // Update the image view with the downloaded image
+                                self.profilePicture_imageView.image = image
+                            }
+                        }
+                    }.resume()
+                }
+                
+            }
+        }
+
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -194,6 +248,7 @@ Password Must:
 
         // Present the alert
         present(alert, animated: true, completion: nil)
+        updateUI()
     }
 
 

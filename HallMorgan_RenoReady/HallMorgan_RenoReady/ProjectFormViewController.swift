@@ -66,9 +66,11 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         tableView.delegate = self
         tableView.dataSource = self
         note_textView.delegate = self
+        tableView.allowsSelection = true
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.dismissKeyboard(_:)))
         self.view.addGestureRecognizer(tapGesture)
+        tapGesture.cancelsTouchesInView = false
         
         //Decide if this is edit mode
         if isEditMode {
@@ -103,6 +105,16 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         toolbar.setItems([cancelBarButton, flexSpace, doneButton], animated: true)
         date_textField.inputAccessoryView = toolbar
+        
+        if #available(iOS 16.0, *) {
+            let saveButton = UIBarButtonItem(title: "Save", image: UIImage(systemName: "square.and.arrow.down.fill"), primaryAction: UIAction(handler: { [weak self] _ in
+                self?.perform(#selector(self?.saveTapped))
+            }))
+            navigationItem.rightBarButtonItem = saveButton
+        } else {
+            // Fallback for earlier iOS versions
+            navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Save", style: .plain, target: self, action: #selector(saveTapped))
+        }
         
     }
     
@@ -154,7 +166,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     @objc func dismissKeyboard(_ sender: UITapGestureRecognizer){
         
         let tapLocation = sender.location(in: tableView)
-            if let indexPath = tableView.indexPathForRow(at: tapLocation) {
+            if let _ = tableView.indexPathForRow(at: tapLocation) {
                 // Tapped inside a table view cell, skip keyboard dismissal
                 return
             }
@@ -195,7 +207,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
    
     
-    @IBAction func saveTapped(_ sender: UIBarButtonItem) {
+    @objc func saveTapped() {
         print("saved tapped")
         
         //Show the loading view
@@ -205,11 +217,9 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         verifyEntries()
         
         if projectFinished {
-            performSegue(withIdentifier: "unwindToDetails", sender: self)
+            performSegue(withIdentifier: "savedProjectDetails", sender: self)
         } else {
             hideLoadingView()
-            let message = "Project Title, Project Category, Deadline, and Budget fields must be entered in order to create a new project"
-            HelperMethods.showBasicErrorAlert(on: self, title: "Cannot Create Project", message: message)
         }
     }
     
@@ -336,7 +346,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         categoryIcon_imageView.image = UIImage(named: HelperMethods.getCategoryImageName(projectCategory: _project.category))
         
         //Set deadline date button text
-        date_textField.text = _project.deadline
+        date_textField.text = "Deadline: \(_project.deadline)"
         
         //set design notes
         if let designNotes = _project.designNotes {
@@ -359,6 +369,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
     
     func verifyEntries() {
+        print("verify entries called")
         let (titleIsFilled, projectTitle) = HelperMethods.textNotEmpty(projectName_textField)
         let (budgetIsFilled, budget) = HelperMethods.textNotEmpty(budget_textField)
         let (dateIsFilled, deadlineText) = HelperMethods.textNotEmpty(date_textField)
@@ -411,6 +422,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                             print("Project was saved. Go to Details Page")
                         } else {
                             self.projectFinished = false
+                            print("Project was not saved successfully")
                         }
                     }
                 }
@@ -422,11 +434,14 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         } else {
             // Something isn't input correctly
             print("Entries were not verified")
+            let message = "Project Title, Project Category, Deadline, and Budget fields must be entered in order to create a new project"
+            HelperMethods.showBasicErrorAlert(on: self, title: "Cannot Create Project", message: message)
             return
         }
     }
     
     func saveTasksToFirestore(task: Task, _project: Project){
+        print("save tasks to firestore called")
         var reference: DocumentReference? = nil
         reference = Firestore.firestore().collection("tasks").addDocument(data: task.toDictionary(), completion: { (error) in
             if let error = error{
@@ -455,6 +470,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
     
     func saveProjectToFirestore(_ project: Project, completion: @escaping (Bool) -> Void) {
+        print("Add Project to firestore called")
         let projectsRef = Firestore.firestore().collection("projects")
         
         if isEditMode {
@@ -483,6 +499,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
 
     func addProjectToUserProjects(_ project: Project, completion: @escaping (Bool) -> Void) {
+        print("Add Project to user's projects called")
         let userRef = Firestore.firestore().collection("users").document(Auth.auth().currentUser!.uid)
         userRef.updateData([
             "projects": FieldValue.arrayUnion([project.projectID])
@@ -500,14 +517,21 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
 
 
     func updateProject(_ projectRef: DocumentReference, _ project: Project, completion: @escaping (Bool) -> Void) {
+        print("Update project called")
         projectRef.setData(project.toDictionary(), merge: true) { error in
             if let error = error {
                 print("Error updating project: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    HelperMethods.showBasicErrorAlert(on: self, title: "Error Saving Project", message: error.localizedDescription)
-                }
                 completion(false)
             } else {
+                if let taskIDs = project.taskIds {
+                    projectRef.updateData(["tasks": taskIDs]) {error in
+                        if let error = error {
+                            print("Error updating taskIds in Firestore: \(error.localizedDescription)")
+                        } else {
+                            print("taskIds updated successfully in Firestore")
+                        }
+                    }
+                }
                 print("Project successfully updated")
                 completion(true)
             }
@@ -579,11 +603,12 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             attributedString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSMakeRange(0, attributedString.length))
             cell.taskTitle_label.attributedText = attributedString
         } else {
-            //Change background color to white for uncompleted tasks
+            cell.taskCircle_imageView.image = UIImage(systemName: "circle")
             cell.backgroundColor = UIColor.white
-            
-            //Remove the strickethrough from the text
-            cell.taskTitle_label.text = currentTask.task
+            // Remove the strikethrough from the text
+            let attributedString: NSMutableAttributedString = NSMutableAttributedString(string: currentTask.task)
+            attributedString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 0, range: NSMakeRange(0, attributedString.length))
+            cell.taskTitle_label.attributedText = attributedString
         }
         
         return cell
@@ -591,6 +616,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
         print("didSelectRowAt was tapped")
         
         let selectedTask = tasksArray[indexPath.row]
@@ -617,7 +643,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         // Get the new view controller using segue.destination.
         // Pass the selected object to the new view controller.
-        if segue.identifier == "unwindToDetails" {
+        if segue.identifier == "savedProjectDetails" {
                 if let destinationVC = segue.destination as? ProjectDetailViewController {
                     destinationVC.project = savedProject
                 }
