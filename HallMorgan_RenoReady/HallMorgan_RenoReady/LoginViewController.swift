@@ -32,13 +32,23 @@ class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        //check network
         HelperMethods.checkNetwork(on: self)
-        let buttonArray = [newUser_signUp_button, forgotPassword_button]
-        for button in buttonArray {
-            guard let buttonText = button?.currentTitle else { return }
-            let attributedTitle = NSAttributedString(string: buttonText, attributes: [.underlineStyle: NSUnderlineStyle.single.rawValue])
-            button?.setAttributedTitle(attributedTitle, for: .normal)
+        
+        if let _ = Auth.auth().currentUser{
+            //Bypass the login page
+            performSegue(withIdentifier: "toHomeScreen", sender: self)
+        } else {
+            //Set up the login page
+            let buttonArray = [newUser_signUp_button, forgotPassword_button]
+            for button in buttonArray {
+                guard let buttonText = button?.currentTitle else { return }
+                let attributedTitle = NSAttributedString(string: buttonText, attributes: [.underlineStyle: NSUnderlineStyle.single.rawValue])
+                button?.setAttributedTitle(attributedTitle, for: .normal)
+            }
         }
+        
+       
         
     }
 

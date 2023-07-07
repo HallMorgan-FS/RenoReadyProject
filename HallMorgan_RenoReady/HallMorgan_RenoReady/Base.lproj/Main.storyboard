@@ -66,7 +66,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="h34-kH-n1O">
-                                <rect key="frame" x="135" y="705" width="122.33333333333331" height="41"/>
+                                <rect key="frame" x="135" y="699" width="122.33333333333331" height="41"/>
                                 <color key="tintColor" systemColor="labelColor"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="SIGN UP">
@@ -118,7 +118,7 @@
                         <color key="backgroundColor" red="0.71889990569999995" green="0.88227647539999998" blue="0.8823555112" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
                             <constraint firstItem="DIM-lK-3Xu" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="20" id="16Y-gO-W5Y"/>
-                            <constraint firstItem="h34-kH-n1O" firstAttribute="top" secondItem="cJJ-1c-x0P" secondAttribute="bottom" constant="16" id="2rK-4I-Aj9"/>
+                            <constraint firstItem="h34-kH-n1O" firstAttribute="top" secondItem="cJJ-1c-x0P" secondAttribute="bottom" constant="10" id="2rK-4I-Aj9"/>
                             <constraint firstItem="M0X-cI-l6c" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.0399061" id="9Dl-ww-orV"/>
                             <constraint firstItem="M0X-cI-l6c" firstAttribute="top" secondItem="WbS-Gw-p97" secondAttribute="bottom" constant="8" id="9KB-mJ-mBG"/>
                             <constraint firstItem="aWY-zs-2SV" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.499576" id="BXv-kj-AJJ"/>
@@ -871,14 +871,14 @@
                                                 <color key="textColor" red="0.32110963850000002" green="0.26847706399999999" blue="0.16255198570000001" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="0Mh-Mo-jdC">
+                                            <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" allowsSelectionDuringEditing="YES" allowsMultipleSelectionDuringEditing="YES" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="0Mh-Mo-jdC">
                                                 <rect key="frame" x="25.666666666666657" y="526.33333333333337" width="327.33333333333337" height="680.00000000000011"/>
                                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="680" id="FhY-JD-wge"/>
                                                 </constraints>
                                                 <prototypes>
-                                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="task_reuseID" rowHeight="76" id="rfw-sI-HU6" customClass="TaskTableViewCell" customModule="HallMorgan_RenoReady" customModuleProvider="target">
+                                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="task_reuse_ID" rowHeight="76" id="rfw-sI-HU6" customClass="TaskTableViewCell" customModule="HallMorgan_RenoReady" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="50" width="327.33333333333337" height="76"/>
                                                         <autoresizingMask key="autoresizingMask"/>
                                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="rfw-sI-HU6" id="R7n-MV-qTy">
@@ -1405,7 +1405,7 @@
     </scenes>
     <inferredMetricsTieBreakers>
         <segue reference="L9x-ka-yud"/>
-        <segue reference="AV6-ga-9K9"/>
+        <segue reference="b7i-KD-G7n"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="bathroom_icon" width="300" height="300"/>

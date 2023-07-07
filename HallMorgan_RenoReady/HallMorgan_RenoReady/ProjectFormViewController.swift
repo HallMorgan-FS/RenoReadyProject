@@ -36,6 +36,8 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     
     @IBOutlet weak var date_textField: UITextField!
     
+    var loadingView: UIView?
+    
     
     var project: Project?
     
@@ -150,7 +152,15 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
     
     @objc func dismissKeyboard(_ sender: UITapGestureRecognizer){
+        
+        let tapLocation = sender.location(in: tableView)
+            if let indexPath = tableView.indexPathForRow(at: tapLocation) {
+                // Tapped inside a table view cell, skip keyboard dismissal
+                return
+            }
+        projectName_textField.resignFirstResponder()
         note_textView.resignFirstResponder()
+        budget_textField.resignFirstResponder()
     }
     
     
@@ -187,12 +197,17 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     
     @IBAction func saveTapped(_ sender: UIBarButtonItem) {
         print("saved tapped")
+        
+        //Show the loading view
+        showLoadingView()
+        
         //Verify the entries
         verifyEntries()
         
         if projectFinished {
             performSegue(withIdentifier: "unwindToDetails", sender: self)
         } else {
+            hideLoadingView()
             let message = "Project Title, Project Category, Deadline, and Budget fields must be entered in order to create a new project"
             HelperMethods.showBasicErrorAlert(on: self, title: "Cannot Create Project", message: message)
         }
@@ -372,7 +387,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     saveProjectToFirestore(updatedProject) { success in
                         if success {
                             self.projectFinished = true
-                            self.performSegue(withIdentifier: "unwindToDetails", sender: self)
+                            print("Project was saved. Go to Details Page")
                         } else {
                             self.projectFinished = false
                         }
@@ -393,18 +408,20 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     saveProjectToFirestore(newProject) { success in
                         if success {
                             self.projectFinished = true
+                            print("Project was saved. Go to Details Page")
                         } else {
                             self.projectFinished = false
                         }
                     }
                 }
             } else {
+                hideLoadingView()
                 HelperMethods.showToast(on: self, message: "Budget input must be set to a valid number")
                 projectFinished = false
             }
         } else {
             // Something isn't input correctly
-            
+            print("Entries were not verified")
             return
         }
     }
@@ -413,6 +430,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         var reference: DocumentReference? = nil
         reference = Firestore.firestore().collection("tasks").addDocument(data: task.toDictionary(), completion: { (error) in
             if let error = error{
+                self.hideLoadingView()
                 print("Error adding task to Firestore: \(error.localizedDescription)")
                 HelperMethods.showBasicErrorAlert(on: self, title: "Error Storing Task", message: error.localizedDescription)
                 
@@ -457,6 +475,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                         completion(userProjectsSuccess)
                     }
                 } else {
+                    self.hideLoadingView()
                     completion(false)
                 }
             }
@@ -504,6 +523,38 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
     }
     
+    func showLoadingView() {
+        // Create the loading view
+        loadingView = UIView(frame: view.bounds)
+        loadingView?.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        
+        // Add the label to the loading view
+        let label = UILabel(frame: CGRect(x: 0, y: 0, width: 200, height: 30))
+        label.text = "Please wait while we save your work..."
+        label.textColor = UIColor.white
+        label.textAlignment = .center
+        label.center = loadingView?.center ?? CGPoint.zero
+        loadingView?.addSubview(label)
+
+        // Add a loading indicator to the view
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.center = loadingView?.center ?? CGPoint.zero
+        activityIndicator.startAnimating()
+        loadingView?.addSubview(activityIndicator)
+
+        // Add the loading view as a subview and bring it to the front
+        view.addSubview(loadingView!)
+        view.bringSubviewToFront(loadingView!)
+    }
+    
+    func hideLoadingView() {
+        // Remove the loading view from the view hierarchy
+        loadingView?.removeFromSuperview()
+        loadingView = nil
+    }
+
+
+    
     //MARK: Table View Methods
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -512,8 +563,9 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "task_reuseID", for: indexPath) as? TaskTableViewCell else {
-            return tableView.dequeueReusableCell(withIdentifier: "task_reuseID", for: indexPath)
+        print("Cell for Row")
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "task_reuse_ID", for: indexPath) as? TaskTableViewCell else {
+            return tableView.dequeueReusableCell(withIdentifier: "task_reuse_ID", for: indexPath)
         }
         
         let currentTask = tasksArray[indexPath.row]
@@ -539,21 +591,22 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print("didSelectRowAt was tapped")
         
         let selectedTask = tasksArray[indexPath.row]
-        
+        print("The selected task was: \(selectedTask.task) and is this task completed?: \(selectedTask.isCompleted)")
         //Update the task based on the tap and update in Firestore
         //HelperMethods.updateTaskWhenTapped(selectedTask: selectedTask, totalSpent: &totalSpent)
         
         selectedTask.isCompleted.toggle()
+        print("the selected task is now completed? : \(selectedTask.isCompleted)")
         
         //Sort taks so that the completed tasks are at the bottom
-        tasksArray.sort { $0.isCompleted && !$1.isCompleted }
+        tasksArray.sort { !$0.isCompleted && $1.isCompleted }
         
-        
-        tableView.reloadRows(at: [indexPath], with: .none)
+        print("Calling ReloadTableView")
         tableView.reloadData()
-
+        print("ReloadTableView has been called")
     }
     
     
