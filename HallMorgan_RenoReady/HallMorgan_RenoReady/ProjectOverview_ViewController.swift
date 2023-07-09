@@ -17,6 +17,9 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     @IBOutlet weak var noProjectsView: UIView!
     
+    @IBOutlet weak var editButton: UIButton!
+    
+    
     var currentUser: FirebaseAuth.User?
     var projects: [Project] = []
     
@@ -24,11 +27,16 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     var selectedProject: Project?
     
+    var remaining = 0.00
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        print("ProjectsOverview: viewDidLoad was called ")
         HelperMethods.checkNetwork(on: self)
+        
+        projects_tableView.rowHeight = UITableView.automaticDimension
+        projects_tableView.estimatedRowHeight = 86
 
         // Do any additional setup after loading the view.
         
@@ -42,9 +50,6 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        getCurrentUserAndProjects()
-    }
     
     private func getCurrentUserAndProjects(){
         
@@ -65,7 +70,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
                         self.projects_tableView.isHidden = true
                         
                     } else {
-                        
+                        print("project Ids count is: \(projectIds.count)")
                         //loop through the project IDs
                         for projectId in projectIds {
                             
@@ -104,16 +109,19 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     @IBAction func editTapped(_ sender: UIButton) {
         //Toggle the editing mode
-        projects_tableView.isEditing = !projects_tableView.isEditing
-        sender.titleLabel?.text = projects_tableView.isEditing ? "Done" : "Edit"
+        projects_tableView.isEditing.toggle()
+        //editButton.titleLabel?.text = projects_tableView.isEditing ? "Done" : "Edit"
         
         if projects_tableView.isEditing {
-                // If tableView is in editing mode, add the delete button
-                navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteSelectedProjects))
-            } else {
-                // If tableView is not in editing mode, remove the delete button
-                navigationItem.rightBarButtonItem = nil
-            }
+            // If tableView is in editing mode, add the delete button
+            editButton.setTitle("Done", for: .normal)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteSelectedProjects))
+            goToDetails = false
+        } else {
+            // If tableView is not in editing mode, remove the delete button
+            editButton.setTitle("Edit", for: .normal)
+            navigationItem.rightBarButtonItem = nil
+        }
     }
     
     //MARK: Table View Set Up
@@ -133,17 +141,53 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         cell.projectName_label.text = project.title
         let imageName = HelperMethods.getCategoryImageName(projectCategory: project.category)
         cell.categoryIcon.image = UIImage(named: imageName)
-        cell.deadline_label.text = project.deadline
-        cell.remainingBudget_label.text = "$\(project.budget - project.totalSpent) Left"
+        cell.deadline_label.text = "Deadline: \(project.deadline)"
+        var remainingBudget = project.budget
+        if project.totalSpent <= project.budget{
+            remainingBudget = project.budget - project.totalSpent
+        } else {
+            remainingBudget = 0.00
+        }
+        print("Remaining budget is \(remainingBudget)")
+        let remainingBudgetString = HelperMethods.formatNumberToCurrency(value: remainingBudget)
+        cell.remainingBudget_label.text = "\(remainingBudgetString) Left"
         
         return cell
     }
     
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 86
+    }
+    
+    var goToDetails = false
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //Open detail view for that specific project
-        let selectedProject = projects[indexPath.row]
-        self.selectedProject = selectedProject
-        performSegue(withIdentifier: "toDetails", sender: self)
+        if !projects_tableView.isEditing {
+            print("DidSelectRowAt was called")
+            //Open detail view for that specific project
+            let selectedProject = projects[indexPath.row]
+            print("Selected Project: \(selectedProject.title)")
+            self.selectedProject = selectedProject
+            print("Self.selectedProject? equals: \(self.selectedProject?.title ?? "nil")")
+            goToDetails = true
+            // Perform the segue
+            self.performSegue(withIdentifier: "toDetails", sender: selectedProject)
+        } else {
+            goToDetails = false
+        }
+    }
+    var goToNewProject = false
+    override func shouldPerformSegue(withIdentifier identifier: String, sender: Any?) -> Bool {
+        if identifier == "toDetails"{
+            return goToDetails
+        }
+        if identifier == "toNewProject"{
+            return goToNewProject
+        }
+        if identifier == "toProfile"{
+            return true
+        }
+        return false
     }
     
     //MARK: Delete Project
@@ -207,12 +251,15 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     func updateProjectUI(){
         if projects.isEmpty {
             //Show the noProjectsView and hide the table view
+            self.editButton.isHidden = true
             self.noProjectsView.isHidden = false
             self.projects_tableView.isHidden = true
         } else {
             //Hide the noProjectsView and show the tableView
+            self.editButton.isHidden = false
             self.noProjectsView.isHidden = true
             self.projects_tableView.isHidden = false
+            
         }
         
         //Update the projectsNum_label
@@ -223,7 +270,9 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     //MARK: Navigation
     
     @IBAction func createProjectTapped(_ sender: UIButton) {
-        shouldPerformSegue(withIdentifier: "toNewProject", sender: self)
+        goToNewProject = true
+        performSegue(withIdentifier: "toNewProject", sender: self)
+        goToNewProject = false
     }
     
     
@@ -231,13 +280,14 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        if let indexPath = projects_tableView.indexPathForSelectedRow {
-            let projectIdToSend = projects[indexPath.row].projectID
-            
-            if let destination = segue.destination as? ProjectDetailViewController{
-                destination.project = selectedProject
-            }
+        print("prepare for segue called")
+        // Check segue identifier
+        if segue.identifier == "toDetails" {
+            print("toDetails was called")
+            // Get the new view controller using segue.destination.
+            let destinationVC = segue.destination as! ProjectDetailViewController
+            // Pass the selected object to the new view controller.
+            destinationVC._project = sender as? Project
         }
     }
     

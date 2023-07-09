@@ -46,38 +46,27 @@ class HelperMethods {
     //MARK: IMAGE RESIZING
     
     static func resizeAndCompressImage(image: UIImage, targetSize: CGSize) -> Data? {
-        // Resize image
-        let size = image.size
+        // Ensure the image is a perfect square by cropping to the center square
+        let originalSize = min(image.size.width, image.size.height)
+        let cropRect = CGRect(x: (image.size.width - originalSize) / 2,
+                              y: (image.size.height - originalSize) / 2,
+                              width: originalSize, height: originalSize)
+        let imageRef = image.cgImage?.cropping(to: cropRect)
+        let squareImage = UIImage(cgImage: imageRef!, scale: 1.0, orientation: image.imageOrientation)
         
-        let widthRatio  = targetSize.width  / size.width
-        let heightRatio = targetSize.height / size.height
-        
-        var newSize: CGSize
-        if(widthRatio > heightRatio) {
-            newSize = CGSize(width: size.width * heightRatio, height: size.height * heightRatio)
-        } else {
-            newSize = CGSize(width: size.width * widthRatio,  height: size.height * widthRatio)
-        }
-        
-        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-        
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        image.draw(in: rect)
-        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        // Resize the square image to target size
+        let rect = CGRect(origin: .zero, size: targetSize)
+        UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+        squareImage.draw(in: rect)
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        // Compress image
-        let imageData = newImage!.jpegData(compressionQuality: 0.5)
+        // Compress the image
+        let imageData = resizedImage!.jpegData(compressionQuality: 0.5)
         
         return imageData
     }
-    
-    static func convertBase64ToImage(_ base64: String) -> UIImage? {
-        guard let data = Data(base64Encoded: base64) else {
-            return nil
-        }
-        return UIImage(data: data)
-    }
+
     
     //MARK: CAMERA AND PHOTO LIBRARY ACCESS
     
@@ -143,38 +132,13 @@ class HelperMethods {
 
             // Get and convert the cost. If it is empty, default the cost to 0.00
             let costText = costField.text ?? "0.00"
-            let cost = Double(costText) ?? 0.00
-            
-            // Generate a temporary task ID using UUID
-            let temporaryTaskId = UUID().uuidString
+            let cleanCostText = costText.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            let cost = Double(cleanCostText) ?? 0.00
 
             // Create the task with an empty ID
-            let task = Task(taskId: temporaryTaskId, task: taskText, isCompleted: false, taskCost: cost)
+            let task = Task(taskId: "", task: taskText, isCompleted: false, taskCost: cost)
             
-            //Store the task in Firestore
-            //get the reference for the tasks database
-            var reference: DocumentReference? = nil
-            reference = Firestore.firestore().collection("tasks").addDocument(data: task.toDictionary(), completion: { (error) in
-                if let error = error{
-                    print("Error adding task to Firestore: \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        self.showBasicErrorAlert(on: viewController, title: "Error Storing Task", message: error.localizedDescription)
-                    }
-                    
-                    completion(nil)
-                    
-                } else {
-                    //Replace the taskID with the Firestore document ID
-                    if let documentId = reference?.documentID {
-                        task.taskId = documentId
-                        // Call the completion handler with the created task
-                        completion(task)
-                    } else {
-                        print("Error: Firestore document reference is nil")
-                    }
-                    completion(nil)
-                }
-            }) //End of document reference
+            completion(task)
             
         })) //End of addAction
 
@@ -206,11 +170,13 @@ class HelperMethods {
             let category = projectData["category"] as? String ?? ""
             let deadline = projectData["deadline"] as? String ?? ""
             let budget = projectData["budget"] as? Double ?? 0.00
-            let designNotes = projectData["notes"] as? String ?? ""
+            let designNotes = projectData["designNotes"] as? String ?? ""
             let taskIds = projectData["tasks"] as? [String]
             let photoIds = projectData["photoIds"] as? [String]
+            let totalSpent = projectData["totalSpent"] as? Double ?? 0.00
             
             project = Project(projectID: projectId, title: title, category: category, designNotes: designNotes, deadline: deadline, budget: budget, tasks: nil, photoIds: photoIds, taskIds: taskIds)
+            project.totalSpent = totalSpent
             
             return project
         }
@@ -293,52 +259,53 @@ class HelperMethods {
         
     }
     
-    static func deleteSelectedTasks(on vc: UIViewController, tableView: UITableView, addButton: UIButton, editButton: UIButton, deleteButton: UIButton, cancelButton: UIButton ,tasks: [Task], updateTasks: @escaping ([Task]) -> Void){
-        
+    static func deleteSelectedTasks(on vc: UIViewController, tableView: UITableView ,selectedTaskIds: [String], addButton: UIButton, editButton: UIButton, deleteButton: UIButton, cancelButton: UIButton ,tasks: [Task], updateTasks: @escaping ([Task]) -> Void){
+
         //Check if any rows are selected
-        guard let selectedIndexPaths = tableView.indexPathsForSelectedRows else {
-            print("No rows selected")
+        guard !selectedTaskIds.isEmpty else {
+            print("No tasks selected")
             return
         }
-        
+
         //Show an alert to confirm deletion
         let alert = UIAlertController(title: "Delete Tasks", message: "Are you sure you want to delete the selected task(s)? This action cannot be undone.", preferredStyle: .alert)
-        
+
         //Cancel action
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        
+
         //Delete action
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
             //Delete the selected tasks from Firestore and from the tasks array
-            for path in selectedIndexPaths {
-                let task = tasks[path.row]
-                //Delete task from Firestore
-                Firestore.firestore().collection("tasks").document(task.taskId).delete() { error in
-                    if let error = error {
-                        print("Error removing task from Firestore: \(error.localizedDescription)")
-                    } else {
-                        print("\(task.task) successfully removed!")
+            for taskId in selectedTaskIds {
+                // Find the task from the tasks array
+                if let task = tasks.first(where: { $0.taskId == taskId }) {
+                    //Delete task from Firestore
+                    Firestore.firestore().collection("tasks").document(task.taskId).delete() { error in
+                        if let error = error {
+                            print("Error removing task from Firestore: \(error.localizedDescription)")
+                        } else {
+                            print("\(task.task) successfully removed!")
+                        }
                     }
-                    
                 }
             }
-            
+
             //Delete the tasks from the tasks array
-            updateTasks(tasks.enumerated().filter { indexPath in
-                !selectedIndexPaths.contains { $0.row == indexPath.offset }
-            }.map { $0.element })
-            
+            updateTasks(tasks.filter { task in
+                !selectedTaskIds.contains(task.taskId)
+            })
+
             //Quit editing
             quitEditing(tableView: tableView, addButton: addButton, editButton: editButton, deleteButton: deleteButton, cancelButton: cancelButton)
-            
+
             //Reload the tableView
             tableView.reloadData()
         }))
-        
+
         //Present the alert
         vc.present(alert, animated: true)
-        
     }
+
     
     
     static func quitEditing(tableView: UITableView ,addButton: UIButton, editButton: UIButton, deleteButton: UIButton, cancelButton: UIButton){
@@ -360,9 +327,10 @@ class HelperMethods {
             //Adjust the totalSpent based on the task's status
         if selectedTask.isCompleted{
             totalSpent += selectedTask.taskCost
-            print(totalSpent)
+            print("Total spent is now: \(totalSpent)")
         } else {
             totalSpent -= selectedTask.taskCost
+            print("Total spent is now: \(totalSpent)")
         }
     }
     
@@ -384,7 +352,7 @@ class HelperMethods {
     static func saveNotesToFirestore(on vc:  UIViewController,notes: String, project: Project){
         let docRef = Firestore.firestore().collection("projects").document(project.projectID)
         docRef.updateData([
-            "notes": notes
+            "designNotes": notes
         ]) { err in
             if let err = err {
                 print("Error updating notes: \(err.localizedDescription)")
@@ -429,5 +397,68 @@ class HelperMethods {
             vc.present(alertController, animated: true, completion: nil)
         }
     }
+    
+    /*static func olderCodeForAddTask(){
+        //Call the addTaskAlert
+        HelperMethods.addTaskAlert(on: self) { [weak self] (task: Optional<Task>) -> Void in
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            guard let task = task else {
+                //Handle the case where no task was created (the user tapped cancel or didn't enter a task in the task field)
+                //Show toast type of alert that no task was created
+                HelperMethods.showToast(on: strongSelf, message: "No task was created.")
+                return
+            }
+            
+            //Task was created.
+            //Store the task in Firestore
+            //get the reference for the tasks database
+            var reference: DocumentReference? = nil
+            reference = Firestore.firestore().collection("tasks").addDocument(data: task.toDictionary(), completion: { (error) in
+                if let error = error{
+                    print("Error adding task to Firestore: \(error.localizedDescription)")
+                    
+                } else {
+                    //Replace the taskID with the Firestore document ID
+                    if let documentId = reference?.documentID {
+                        task.taskId = documentId
+                        print("Task ID: \(task.taskId) should equal document ID: \(documentId)")
+                        print("Task \(task.task) was successfully added to Firestore")
+                        
+                        //Add that task to the projects document taskId array under the updated projectID
+                        HelperMethods.addTaskToProject(projectID: strongSelf.project.projectID, taskId: task.taskId) { (error) in
+                            if let error = error {
+                                print("Error adding task to Firestore: \(error.localizedDescription)")
+                                HelperMethods.showBasicErrorAlert(on: strongSelf, title: "Error Storing Task to \(strongSelf.project.title)", message: error.localizedDescription)
+                            } else {
+                                //Only update the project's task array if task was successfully added to firestore
+                                
+                                //Update the project's task array
+                                if strongSelf.project.tasks == nil {
+                                    strongSelf.project.tasks = [task]
+                                } else {
+                                    strongSelf.project.tasks?.append(task)
+                                }
+                                print("\(task.task) was added to the projects task array")
+                                
+                                //Add the task to the taskArray
+                                strongSelf.taskArray.append(task)
+                                //Reload the tableView
+                                strongSelf.tableView.reloadData()
+                            }
+                        }
+                        
+                    } else {
+                        print("Error: Firestore document reference is nil")
+                    }
+                }
+            }) //End of document reference
+           
+        }
+    }
+     */
     
 }

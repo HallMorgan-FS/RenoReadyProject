@@ -48,8 +48,11 @@ class LoginViewController: UIViewController {
             }
         }
         
-       
-        
+    }
+    
+    func clearTextFields() {
+        email_textField.text = nil
+        password_textField.text = nil
     }
 
     @IBAction func newUserSignUpTapped(_ sender: UIButton) {

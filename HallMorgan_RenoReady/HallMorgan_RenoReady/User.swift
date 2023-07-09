@@ -72,7 +72,7 @@ class Project {
             dictionary["designNotes"] = designNotes
         }
         if let taskIds = self.taskIds {
-            dictionary["taskIds"] = taskIds
+            dictionary["tasks"] = taskIds
         }
         if let photoIds = self.photoIds {
             dictionary["photoIds"] = photoIds

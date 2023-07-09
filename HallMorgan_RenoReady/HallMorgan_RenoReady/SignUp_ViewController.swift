@@ -32,8 +32,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        // Clip profile picture to a circle shape
-        profilePicture.clipsToBounds = true
+        
         //Add observers to only scroll while the keyboard is showing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -251,18 +250,12 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         if let pickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 150, height: 150)) {
-                if let resizedImage = UIImage(data: resizedImageData) {
-                    profilePicture.contentMode = .scaleAspectFill
-                    profilePicture.image = resizedImage
-                } else {
-                    print("Error creating resized image from data")
-                }
-            } else {
-                print("Error resizing and compressing image")
-            }
+            profilePicture.contentMode = .scaleAspectFill
+            profilePicture.image = pickedImage
+        } else {
+            print("Error picking image")
         }
-        
+            
         picker.dismiss(animated: true, completion: nil)
     }
 

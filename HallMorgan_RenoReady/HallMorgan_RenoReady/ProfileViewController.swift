@@ -25,8 +25,6 @@ class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePicke
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        profilePicture_imageView.clipsToBounds = true
-
         // Do any additional setup after loading the view.
         //Add tap gesture for the image view
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
@@ -34,6 +32,7 @@ class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         
         //Update UI
         updateUI()
+        
     }
     
     func updateUI() {
@@ -77,6 +76,7 @@ class ProfileViewController: UIViewController, UITextFieldDelegate, UIImagePicke
                             DispatchQueue.main.async {
                                 // Update the image view with the downloaded image
                                 self.profilePicture_imageView.image = image
+                                print("Successfully captured image data and set ptofile photo")
                             }
                         }
                     }.resume()
@@ -148,24 +148,17 @@ Password Must:
                     confirmTextField = textField
                 }
 
-                guard let confirmText = confirmTextField?.text else { return }
-
+                
                 // Validate password change
                 let (isValidPassword, passwordErrorMessage) = HelperMethods.isValidPassword(newText)
                 if !isValidPassword {
-                    self.showAlert(passwordErrorMessage) {
+                    self.showAlert("Password must include at least \(passwordErrorMessage)") {
                         newTextField?.text = "" // Clear the new password text field
                         confirmTextField?.text = "" // Clear the confirm password text field
                     }
                     return
                 }
-
-                if newText != confirmText {
-                    self.showAlert("Passwords do not match.") {
-                        confirmTextField?.text = "" // Clear the confirm password text field
-                    }
-                    return
-                }
+                
 
                 // Validate current password
                 let credential = EmailAuthProvider.credential(withEmail: Auth.auth().currentUser?.email ?? "", password: currentText)
@@ -189,13 +182,7 @@ Password Must:
                                 do {
                                     try Auth.auth().signOut()
                                     // Navigate to the login screen
-                                        if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
-                                           let window = sceneDelegate.window {
-                                            let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                                            let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as! LoginViewController
-                                            window.rootViewController = loginViewController
-                                            window.makeKeyAndVisible()
-                                        }
+                                    self.performSegue(withIdentifier: "unwindToLogin", sender: self)
                                 } catch let signOutError as NSError {
                                     print("Error signing out: \(signOutError.localizedDescription)")
                                 }
@@ -225,18 +212,25 @@ Password Must:
                     if let error = error {
                         self.showAlert("Failed to change email: \(error.localizedDescription)")
                     } else {
+                        if let currentUser = self.currentUser {
+                            let uid = currentUser.uid
+                            
+                            let userDoc = Firestore.firestore().collection("users").document(uid)
+                            
+                            userDoc.updateData(["email" : newText]) { err in
+                                if let err = err {
+                                    print("Error updating user email: \(err.localizedDescription)")
+                                } else {
+                                    print("Email in document was successfully updated")
+                                }
+                            }
+                        }
                         self.showAlert("Email changed successfully. Please sign in again with your updated credentials.") {
                             // Log out and exit the app
                             do {
                                 try Auth.auth().signOut()
                                 // Navigate to the login screen
-                                    if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
-                                       let window = sceneDelegate.window {
-                                        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                                        let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as! LoginViewController
-                                        window.rootViewController = loginViewController
-                                        window.makeKeyAndVisible()
-                                    }
+                                self.performSegue(withIdentifier: "unwindToLogin", sender: self)
                             } catch let signOutError as NSError {
                                 print("Error signing out: \(signOutError.localizedDescription)")
                             }
@@ -267,6 +261,13 @@ Password Must:
             try Auth.auth().signOut()
             //User logged out successfully
             performSegue(withIdentifier: "unwindToLogin", sender: self)
+//            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+//               let window = sceneDelegate.window {
+//                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//                let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as! LoginViewController
+//                window.rootViewController = loginViewController
+//                window.makeKeyAndVisible()
+//            }
         } catch let error {
             print("Error signing out: \(error.localizedDescription)")
             HelperMethods.showBasicErrorAlert(on: self, title: "Error Signing Out", message: error.localizedDescription)
@@ -350,7 +351,7 @@ Password Must:
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         if let pickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 150, height: 150)) {
+            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 115, height: 115)) {
                 profilePicture_imageView.contentMode = .scaleAspectFill
                 profilePicture_imageView.image = UIImage(data: resizedImageData)
                 
@@ -407,6 +408,7 @@ Password Must:
         
         picker.dismiss(animated: true, completion: nil)
     }
+
 
     private func showPhotoLibraryAccessDeniedAlert() {
         let alert = UIAlertController(title: "Photo Library Access Denied", message: "Please grant permission to access the photo library in Settings to select an image.", preferredStyle: .alert)

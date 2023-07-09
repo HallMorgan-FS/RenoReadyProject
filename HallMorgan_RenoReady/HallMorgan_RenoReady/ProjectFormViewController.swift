@@ -74,15 +74,19 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
         //Decide if this is edit mode
         if isEditMode {
+            print("in edit mode")
             //Get the project being edited
             guard let _project = project else {print("Project is null"); return}
             //Change navigation title
             navigationItem.title = "Edit Project"
             totalSpent = _project.totalSpent
+            print("view did load: in Edit mode: Sent projects total spent: \(_project.totalSpent)\nCaptured total spent: \(totalSpent)")
             //Fill out the UI
             updateUI(_project: _project)
         } else {
             navigationItem.title = "Create Project"
+            category_button.setTitle("Kitchen", for: .normal)
+            print("Captured total spent: \(totalSpent)")
         }
         
         //Set up the datePicker
@@ -180,12 +184,14 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         //create action sheet
         let categoryActionSheet = UIAlertController(title: "Choose Room to Renovate", message: nil, preferredStyle: .actionSheet)
         let categories = ["Bathroom", "Bedroom", "Kitchen" ,"Living Room"]
+        
         for (_, chosenCategory) in categories.enumerated(){
             //Change the button title that opened the action sheet
             let action = UIAlertAction(title: chosenCategory, style: .default) { (action) in
                 sender.setTitle(chosenCategory, for: .normal)
                 //Set the category variable
-                self.category = sender.titleLabel?.text ?? self.defaultCategoryText
+                self.category = chosenCategory
+                print("Chose category: \(self.category)")
                 //set the category icon image
                 self.categoryIcon_imageView.image = UIImage(named: HelperMethods.getCategoryImageName(projectCategory: chosenCategory))
             }
@@ -215,12 +221,6 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
         //Verify the entries
         verifyEntries()
-        
-        if projectFinished {
-            performSegue(withIdentifier: "savedProjectDetails", sender: self)
-        } else {
-            hideLoadingView()
-        }
     }
     
     override func shouldPerformSegue(withIdentifier identifier: String, sender: Any?) -> Bool {
@@ -240,32 +240,49 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     }
     
     @IBAction func deleteSelectedTasksTapped(_ sender: UIButton) {
-        //Check if any rows are selected
+        print("deleteSelectedTasksTapped")
+        // Check if any rows are selected
         guard let selectedIndexPaths = tableView.indexPathsForSelectedRows else {
             print("No rows selected")
             return
         }
         
-        //Show an alert to confirm deletion
+        // Show an alert to confirm deletion
         let alert = UIAlertController(title: "Delete Tasks", message: "Are you sure you want to delete the selected task(s)? This action cannot be undone.", preferredStyle: .alert)
         
-        //Cancel action
+        // Cancel action
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
-        //Delete Action
+        // Delete Action
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
+            // Track selected tasks and their costs
+            var selectedTasks: [Task] = []
+            var costOfSelectedCompletedTasks: Double = 0
             
-            //Delete the tasks from the tasks array
-            self.tasksArray = self.tasksArray.enumerated().filter { indexPath in
-                !selectedIndexPaths.contains { $0.row == indexPath.offset }
-            }.map { $0.element }
+            for path in selectedIndexPaths {
+                let task = self.tasksArray[path.row]
+                selectedTasks.append(task)
+                if task.isCompleted {
+                    costOfSelectedCompletedTasks += task.taskCost
+                }
+            }
             
-            //Quit editing
+            // Filter the tasks array to remove selected tasks
+            self.tasksArray = self.tasksArray.filter { task in
+                selectedTasks.first(where: { $0.taskId == task.taskId }) == nil
+            }
+            
+            // Subtract the cost of the deleted completed tasks from total spent
+            self.totalSpent -= costOfSelectedCompletedTasks
+            
+            // Quit editing
             HelperMethods.quitEditing(tableView: self.tableView, addButton: self.addTask_button, editButton: self.deleteTask_Button, deleteButton: self.finishDeleteTasksButton, cancelButton: self.cancelEditingButton)
             
-            //Reload the tableView
+            // Reload the tableView
             self.updateTableView()
         }))
+        
+        present(alert, animated: true)
     }
     
     @IBAction func cancelEditingTapped(_ sender: UIButton) {
@@ -287,7 +304,6 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             guard let alert = alert else { return }
             let taskField = alert.textFields![0]
             let costField = alert.textFields![1]
-            costField.keyboardType = .decimalPad
 
             guard let taskText = taskField.text, !taskText.isEmpty else {
                 // If the task field is empty, call the completion handler with nil
@@ -297,16 +313,16 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
 
             // Get and convert the cost. If it is empty, default the cost to 0.00
             let costText = costField.text ?? "0.00"
-            let cost = Double(costText) ?? 0.00
-            
-            // Generate a temporary task ID using UUID
-            let temporaryTaskId = UUID().uuidString
-
+            let cleanCostText = costText.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            let cost = Double(cleanCostText) ?? 0.00
+            //generate unique task ID
+            let tempId = UUID().uuidString
             // Create the task with an empty ID
-            let task = Task(taskId: temporaryTaskId, task: taskText, isCompleted: false, taskCost: cost)
+            let task = Task(taskId: tempId, task: taskText, isCompleted: false, taskCost: cost)
             
             //add that task to the tasks array
             self.tasksArray.append(task)
+            self.updateTableView()
             self.noTasksView.isHidden = true
             self.tableView.isHidden = false
             self.tableView.reloadData()
@@ -322,12 +338,12 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             noTasksView.isHidden = false
             tableView.isHidden = true
             addTask_button.isHidden = false
-            deleteTask_Button.isHidden = false
+            deleteTask_Button.isHidden = true
             cancelEditingButton.isHidden = true
             finishDeleteTasksButton.isHidden = true
             
         } else {
-            //Hide the tableView and tableView buttons
+            //show the tableView and tableView buttons
             noTasksView.isHidden = true
             tableView.isHidden = false
             addTask_button.isHidden = false
@@ -342,11 +358,12 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     
     func updateUI(_project: Project){
         projectName_textField.text = _project.title
-        category_button.titleLabel?.text = _project.category
+        category_button.setTitle(_project.category, for: .normal)
+        category = _project.category
         categoryIcon_imageView.image = UIImage(named: HelperMethods.getCategoryImageName(projectCategory: _project.category))
         
         //Set deadline date button text
-        date_textField.text = "Deadline: \(_project.deadline)"
+        date_textField.text = _project.deadline
         
         //set design notes
         if let designNotes = _project.designNotes {
@@ -373,8 +390,14 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         let (titleIsFilled, projectTitle) = HelperMethods.textNotEmpty(projectName_textField)
         let (budgetIsFilled, budget) = HelperMethods.textNotEmpty(budget_textField)
         let (dateIsFilled, deadlineText) = HelperMethods.textNotEmpty(date_textField)
+        print("Category equals \(category) and button text equals \(category_button.titleLabel?.text ?? "nil")")
+        if category == "" {
+            HelperMethods.showBasicErrorAlert(on: self, title: "No Category Selected", message: "A category must be selected in order to save a project")
+            projectFinished = false
+            return
+        }
         
-        if titleIsFilled && budgetIsFilled && dateIsFilled && category_button.titleLabel?.text != defaultCategoryText && category != defaultCategoryText {
+        if titleIsFilled && budgetIsFilled && dateIsFilled && category != "" {
             // If the project title, category, deadline, and budget are filled in, check that the budget can be a valid Double variable
             if let budgetDouble = Double(budget) {
                 if isEditMode {
@@ -385,6 +408,9 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     }
                     
                     let updatedProject = Project(projectID: existingProject.projectID, title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray)
+                    print("Edited project's total spent is currently \(updatedProject.totalSpent) before updating")
+                    updatedProject.totalSpent = totalSpent
+                    print("Edited project's total spent is now \(updatedProject.totalSpent) after updating")
                     handleDesignNotes(updatedProject)
                     //If the tasks aren't empty, save the tasks to firestore and get the updated taskID
                     if (!tasksArray.isEmpty){
@@ -396,8 +422,10 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     
                     // Save project to Firestore
                     saveProjectToFirestore(updatedProject) { success in
+                        self.hideLoadingView()
                         if success {
                             self.projectFinished = true
+                            self.performSegue(withIdentifier: "savedProjectDetails", sender: updatedProject)
                             print("Project was saved. Go to Details Page")
                         } else {
                             self.projectFinished = false
@@ -406,6 +434,8 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                 } else {
                     // Create a new project
                     let newProject = Project(projectID: "", title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray)
+                    newProject.totalSpent = totalSpent
+                    print("New project's total spent is \(newProject.totalSpent)")
                     handleDesignNotes(newProject)
                     //If the tasks aren't empty, save the tasks to firestore and get the updated taskID
                     if (!tasksArray.isEmpty){
@@ -417,8 +447,10 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     
                     // Save new project to Firestore
                     saveProjectToFirestore(newProject) { success in
+                        self.hideLoadingView()
                         if success {
                             self.projectFinished = true
+                            self.performSegue(withIdentifier: "savedProjectDetails", sender: newProject)
                             print("Project was saved. Go to Details Page")
                         } else {
                             self.projectFinished = false
@@ -532,6 +564,15 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                         }
                     }
                 }
+                if let notes = project.designNotes {
+                    projectRef.updateData(["designNotes" : notes]) {error in
+                        if let error = error {
+                            print("Error updating design notes in Firestore: \(error.localizedDescription)")
+                        } else {
+                            print("design notes updated successfully in Firestore")
+                        }
+                    }
+                }
                 print("Project successfully updated")
                 completion(true)
             }
@@ -554,7 +595,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
         // Add the label to the loading view
         let label = UILabel(frame: CGRect(x: 0, y: 0, width: 200, height: 30))
-        label.text = "Please wait while we save your work..."
+        label.text = "Saving your project..."
         label.textColor = UIColor.white
         label.textAlignment = .center
         label.center = loadingView?.center ?? CGPoint.zero
@@ -613,27 +654,30 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         
         return cell
     }
-
+    
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        print("didSelectRowAt was tapped")
-        
-        let selectedTask = tasksArray[indexPath.row]
-        print("The selected task was: \(selectedTask.task) and is this task completed?: \(selectedTask.isCompleted)")
-        //Update the task based on the tap and update in Firestore
-        //HelperMethods.updateTaskWhenTapped(selectedTask: selectedTask, totalSpent: &totalSpent)
-        
-        selectedTask.isCompleted.toggle()
-        print("the selected task is now completed? : \(selectedTask.isCompleted)")
-        
-        //Sort taks so that the completed tasks are at the bottom
-        tasksArray.sort { !$0.isCompleted && $1.isCompleted }
-        
-        print("Calling ReloadTableView")
-        tableView.reloadData()
-        print("ReloadTableView has been called")
+            
+        if !tableView.isEditing{
+            print("didSelectRowAt was tapped")
+            
+            let selectedTask = tasksArray[indexPath.row]
+            print("The selected task was: \(selectedTask.task) and is this task completed?: \(selectedTask.isCompleted)")
+            
+            //Update the task based on the tap
+            HelperMethods.updateTaskWhenTapped(selectedTask: selectedTask, totalSpent: &totalSpent)
+            
+            print("the selected task is now completed? : \(selectedTask.isCompleted)")
+            
+            //Sort tasks so that the completed tasks are at the bottom
+            tasksArray.sort { !$0.isCompleted && $1.isCompleted }
+            
+            print("Calling ReloadTableView")
+            tableView.reloadData()
+            print("ReloadTableView has been called")
+        }
     }
+
     
     
     
@@ -643,10 +687,12 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         // Get the new view controller using segue.destination.
         // Pass the selected object to the new view controller.
-        if segue.identifier == "savedProjectDetails" {
-                if let destinationVC = segue.destination as? ProjectDetailViewController {
-                    destinationVC.project = savedProject
-                }
+        if segue.identifier == "savedProjectDetails",
+               let project = sender as? Project,
+               let detailVC = segue.destination as? ProjectDetailViewController{
+                
+            detailVC._project = project
+            
             }
     }
     
