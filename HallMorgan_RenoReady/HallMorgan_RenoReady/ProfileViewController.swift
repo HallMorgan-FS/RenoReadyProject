@@ -256,11 +256,15 @@ Password Must:
     }
     
     @IBAction func logoutTapped(_ sender: UIButton) {
+        print("Logout tapped")
         //log the user out and exit to the home screen
         do {
             try Auth.auth().signOut()
             //User logged out successfully
-            performSegue(withIdentifier: "unwindToLogin", sender: self)
+            print("User logged out.")
+            NotificationCenter.default.post(name: .didLogout, object: nil)
+            //performSegue(withIdentifier: "unwindToLogin", sender: self)
+            print("Went back to login")
 //            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
 //               let window = sceneDelegate.window {
 //                let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -445,4 +449,8 @@ Password Must:
     }
     */
 
+}
+
+extension Notification.Name {
+    static let didLogout = Notification.Name("didLogout")
 }

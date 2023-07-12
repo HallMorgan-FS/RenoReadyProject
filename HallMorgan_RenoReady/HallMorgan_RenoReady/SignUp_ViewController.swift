@@ -250,13 +250,21 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         if let pickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
-            profilePicture.contentMode = .scaleAspectFill
-            profilePicture.image = pickedImage
-        } else {
-            print("Error picking image")
-        }
-            
-        picker.dismiss(animated: true, completion: nil)
+
+                // Use the helper method to resize and compress the picked image
+            if let resizedImageData = HelperMethods.resizeAndCompressImage(image: pickedImage, targetSize: CGSize(width: 115, height: 115)) {
+                    // Convert the resized image data back into a UIImage
+                    let resizedImage = UIImage(data: resizedImageData)
+                    profilePicture.contentMode = .scaleAspectFill
+                    profilePicture.image = resizedImage
+                } else {
+                    print("Error resizing and compressing image")
+                }
+            } else {
+                print("Error picking image")
+            }
+
+            picker.dismiss(animated: true, completion: nil)
     }
 
     // MARK: Helper Methods

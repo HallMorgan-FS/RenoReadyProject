@@ -30,9 +30,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UINavigationBar.appearance().tintColor = UIColor.cremeWhite
             UINavigationBar.appearance().titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.cremeWhite]
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(self.userDidLogout), name: .didLogout, object: nil)
+
         FirebaseApp.configure()
 
         return true
+    }
+    
+    @objc func userDidLogout(_ notification: NSNotification){
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController")
+        window?.rootViewController = loginViewController
     }
 
     // MARK: UISceneSession Lifecycle

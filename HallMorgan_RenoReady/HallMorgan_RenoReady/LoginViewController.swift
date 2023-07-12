@@ -27,13 +27,23 @@ class LoginViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         UINavigationBar.appearance().isTranslucent = true
+        email_textField.text = nil
+        password_textField.text = nil
+        email_textField.resignFirstResponder()
+        password_textField.resignFirstResponder()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        UINavigationBar.appearance().isTranslucent = true
         //check network
         HelperMethods.checkNetwork(on: self)
+        
+        email_textField.text = nil
+        password_textField.text = nil
+        email_textField.resignFirstResponder()
+        password_textField.resignFirstResponder()
         
         if let _ = Auth.auth().currentUser{
             //Bypass the login page
