@@ -24,15 +24,6 @@ class LoginViewController: UIViewController {
     
     var didSignIn = false
     
-    
-    override func viewWillAppear(_ animated: Bool) {
-        UINavigationBar.appearance().isTranslucent = true
-        email_textField.text = nil
-        password_textField.text = nil
-        email_textField.resignFirstResponder()
-        password_textField.resignFirstResponder()
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -40,10 +31,10 @@ class LoginViewController: UIViewController {
         //check network
         HelperMethods.checkNetwork(on: self)
         
-        email_textField.text = nil
-        password_textField.text = nil
-        email_textField.resignFirstResponder()
-        password_textField.resignFirstResponder()
+//
+//        email_textField.resignFirstResponder()
+//        password_textField.resignFirstResponder()
+        //password_textField.isSecureTextEntry = true
         
         if let _ = Auth.auth().currentUser{
             //Bypass the login page
@@ -58,11 +49,45 @@ class LoginViewController: UIViewController {
             }
         }
         
+        //set password visibily toggle based on eye being touched
+        //create a button
+        let passVisButton = UIButton(type: .custom)
+        
+        //Set the image for the button
+        passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        //Add a target for this button
+        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+        //set constraints for button
+        passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+        //Add the button to the text field's right view
+        password_textField.rightView = passVisButton
+        //Set the text field's right view mode to always appear
+        password_textField.rightViewMode = .always
+        
+    }
+    
+    @objc func togglePasswordVisibility(){
+        //Change the secure text entry property of the textField
+        password_textField.isSecureTextEntry = !password_textField.isSecureTextEntry
+        
+        //Get a reference to the button
+        let passVisButton = password_textField.rightView as! UIButton
+        
+        //Set the image based on whether the pasword is currently visable
+        if password_textField.isSecureTextEntry{
+            passVisButton.setImage(UIImage(systemName: "eye.fill"), for: .normal)
+        } else {
+            passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        }
     }
     
     func clearTextFields() {
+        UINavigationBar.appearance().isTranslucent = true
         email_textField.text = nil
         password_textField.text = nil
+        email_textField.resignFirstResponder()
+        password_textField.resignFirstResponder()
+        password_textField.isSecureTextEntry = true
     }
 
     @IBAction func newUserSignUpTapped(_ sender: UIButton) {
@@ -102,8 +127,8 @@ class LoginViewController: UIViewController {
             if let error = error {
                 let authError = error as NSError
                 // Show an alert with the error
-                let alert = UIAlertController(title: "Error", message: authError.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                let alert = UIAlertController(title: "Error", message: "\(authError.localizedDescription)\nPlease try again.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Try Again", style: .default))
                 strongSelf.present(alert, animated: true)
                 strongSelf.didSignIn = false
                 return
@@ -131,7 +156,7 @@ class LoginViewController: UIViewController {
                     Auth.auth().sendPasswordReset(withEmail: emailToBeReset) { error in
                         // Handle errors here
                         if let error = error {
-                            let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
+                            let alert = UIAlertController(title: "Error", message: "\(error.localizedDescription)\nPlease try again.", preferredStyle: .alert)
                             alert.addAction(UIAlertAction(title: "OK", style: .default))
                             self.present(alert, animated: true)
                             return

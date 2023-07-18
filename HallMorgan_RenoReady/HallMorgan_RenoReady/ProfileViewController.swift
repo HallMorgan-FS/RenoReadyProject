@@ -182,7 +182,8 @@ Password Must:
                                 do {
                                     try Auth.auth().signOut()
                                     // Navigate to the login screen
-                                    self.performSegue(withIdentifier: "unwindToLogin", sender: self)
+                                    //self.performSegue(withIdentifier: "unwindToLogin", sender: self)
+                                    self.goToLoginScreen()
                                 } catch let signOutError as NSError {
                                     print("Error signing out: \(signOutError.localizedDescription)")
                                 }
@@ -230,7 +231,8 @@ Password Must:
                             do {
                                 try Auth.auth().signOut()
                                 // Navigate to the login screen
-                                self.performSegue(withIdentifier: "unwindToLogin", sender: self)
+                                //self.performSegue(withIdentifier: "unwindToLogin", sender: self)
+                                self.goToLoginScreen()
                             } catch let signOutError as NSError {
                                 print("Error signing out: \(signOutError.localizedDescription)")
                             }
@@ -262,21 +264,153 @@ Password Must:
             try Auth.auth().signOut()
             //User logged out successfully
             print("User logged out.")
-            NotificationCenter.default.post(name: .didLogout, object: nil)
+            //NotificationCenter.default.post(name: .didLogout, object: nil)
             //performSegue(withIdentifier: "unwindToLogin", sender: self)
+            goToLoginScreen()
             print("Went back to login")
-//            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
-//               let window = sceneDelegate.window {
-//                let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//                let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as! LoginViewController
-//                window.rootViewController = loginViewController
-//                window.makeKeyAndVisible()
-//            }
         } catch let error {
             print("Error signing out: \(error.localizedDescription)")
             HelperMethods.showBasicErrorAlert(on: self, title: "Error Signing Out", message: error.localizedDescription)
         }
     }
+    
+    @IBAction func deleteAccount(_ sender: UIButton) {
+        let alert = UIAlertController(title: "Delete Account", message: "Are you sure you want to delete your account? This cannot be undone. All Project data will be lost", preferredStyle: .alert)
+        let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { _ in
+            guard let user = Auth.auth().currentUser else {return}
+            
+            //delete all of the users data
+            self.deleteUserData(user: user)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        
+        present(alert, animated: true)
+    }
+    
+    func deleteUserData( user : FirebaseAuth.User){
+        // Create a DispatchGroup
+        let group = DispatchGroup()
+        
+        //fetch all of the projects of the user
+        let userRef = Firestore.firestore().collection("users").document(user.uid)
+        userRef.getDocument { (snapshot, error) in
+            if let error = error {
+                print("Error getting user document: \(error.localizedDescription)")
+            } else {
+                if let userData = snapshot?.data() {
+                    let projectIDs = userData["projects"] as? [String] ?? []
+                    let profilePhotoURL = userData["profile_photo_url"] as? String
+                    
+                    //Fetch and delete each project
+                    
+                    for projectID in projectIDs {
+                        let projectRef = Firestore.firestore().collection("projects").document(projectID)
+                        projectRef.getDocument { (snapshot, error ) in
+                            if let error = error {
+                                print("Error getting project document: \(error.localizedDescription)")
+                            } else {
+                                
+                                //If there is a list of task IDs withing the project document, delete each task
+                                if let projectData = snapshot?.data() {
+                                    let taskIDs = projectData["tasks"] as? [String] ?? []
+                                    for taskID in taskIDs {
+                                        // Enter the group before each request
+                                        group.enter()
+                                        
+                                        let taskRef = projectRef.collection("tasks").document(taskID)
+                                        taskRef.delete { error in
+                                            if let error = error {
+                                                print("Error deleting tasks: \(error.localizedDescription) ")
+                                            } else {
+                                                print("tasks have been deleted")
+                                            }
+                                            // Leave the group as soon as the request is finished
+                                            group.leave()
+                                        }
+                                    }
+                                }
+                                
+                                // Enter the group for the project deletion
+                                group.enter()
+                                //Delete the project document
+                                projectRef.delete { err in
+                                    if let err = err {
+                                        print("Error deleting project document: \(err.localizedDescription)")
+                                    } else {
+                                        print("Project document successfully removed!")
+                                    }
+                                    // Leave the group when the project deletion is done
+                                    group.leave()
+                                }
+                            }
+                        }
+                    }
+                    
+                    //Delete the profile photo
+                    if let profilePhotoURL = profilePhotoURL {
+                        // Enter the group for the image deletion
+                        group.enter()
+                        
+                        let storageRef = Storage.storage().reference(forURL: profilePhotoURL)
+                        storageRef.delete { error in
+                            if let error = error {
+                                print("Error deleting image: \(error.localizedDescription)")
+                            } else {
+                                print("Image deleted successfully")
+                            }
+                            // Leave the group when the image deletion is done
+                            group.leave()
+                        }
+                    }
+                    
+                    // When all the previous operations (tasks, projects, image deletions) are done, then proceed to delete user document and user from Firebase Auth
+                    group.notify(queue: .main) {
+                        // Delete the user document
+                        userRef.delete { err in
+                            if let err = err {
+                                print("Error removing user document: \(err)")
+                                HelperMethods.showBasicErrorAlert(on: self, title: "Error Deleting Account", message: "Error: \(err.localizedDescription)")
+                            } else {
+                                print("User document successfully removed!")
+                                
+                                // Then delete the user from Firebase Auth
+                                user.delete { error in
+                                    if let error = error {
+                                        print("An error occurred when deleting the user")
+                                        HelperMethods.showBasicErrorAlert(on: self, title: "Error Deleting Account", message: "Error: \(error.localizedDescription)")
+                                    } else {
+                                        print("User was deleted from Firebase Auth")
+                                        // Navigate back to login screen or perform further clean up
+                                        self.goToLoginScreen()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    
+    func goToLoginScreen() {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let loginViewController = storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController else {
+            return
+        }
+        
+        let navigationController = UINavigationController(rootViewController: loginViewController)
+        
+        if let sceneDelegate = self.view.window?.windowScene?.delegate as? SceneDelegate {
+            sceneDelegate.window?.rootViewController = navigationController
+        }
+    }
+
+    
     
     // MARK: PROFILE PHOTO - IMAGE PICKER METHODS
     

@@ -37,11 +37,15 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
     var loadingView: UIView?
     
     var project: Project!
-    var _project: Project?
+    var sentProject: Project?
     
     let db = Firestore.firestore()
     
     var taskArray = [Task]()
+    
+    var projectIsCompleted: Bool = false
+    
+    var completedTasks = [Task]()
     
     
     
@@ -63,7 +67,7 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         self.view.addGestureRecognizer(tapGesture)
         tapGesture.cancelsTouchesInView = false
         
-        guard let sentProject = _project else {
+        guard let sentProject = sentProject else {
             print("Project is nil")
             return
         }
@@ -244,6 +248,11 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
     @objc func goBackToOverview(){
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         
+        //Save the projects design notes
+        guard let notes = notes_textView.text else {print("design notes are empty"); return}
+        
+        HelperMethods.saveNotesToFirestore(on: self, notes: notes, project: project)
+        
         //Instantiate the home view controller
         guard let homeScreen = storyboard.instantiateViewController(withIdentifier: "homeViewController") as? ProjectOverview_ViewController else {
             print("Could not instantiate HomeViewController")
@@ -301,7 +310,13 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         }
         
         //update deadline
-        deadline_label.text = "Deadline: \(project.deadline)"
+        if projectIsCompleted {
+            deadline_label.text = "PROJECT COMPLETED!!"
+            deadline_label.textColor = UIColor.darkGreen
+        } else {
+            deadline_label.text = "Deadline: \(project.deadline)"
+            deadline_label.textColor = UIColor.darkBrown
+        }
         
         budget_label.text = HelperMethods.formatNumberToCurrency(value: remainingBudget)
         
@@ -330,6 +345,34 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
         tableView.reloadData()
         
         
+    }
+    
+    func checkCompletedProject(){
+        if taskArray.allSatisfy({ $0.isCompleted == true }) {
+            //show alert asking if the project should be marked as completed
+            let alert = UIAlertController(title: "All Tasks Complete", message: "All tasks have been marked as complete! Would you like to mark this project as completed?", preferredStyle: .alert)
+            
+            let yesAction = UIAlertAction(title: "Yes", style: .default) { _ in
+                self.projectIsCompleted = true
+                let projectRef = self.db.collection("projects").document(self.project.projectID)
+                //Update the completed variable in the database
+                projectRef.updateData(["completed" : true]) { err in
+                    if let err = err {
+                        print("Error updating project completion: \(err.localizedDescription)")
+                    } else {
+                        print("Project completion was updated successfully")
+                        self.updateUI()
+                    }
+                }
+            }
+            
+            let cancelAction = UIAlertAction(title: "No", style: .cancel)
+            
+            alert.addAction(yesAction)
+            alert.addAction(cancelAction)
+            
+            present(alert, animated: true)
+        }
     }
     
     func updateBudget(){
@@ -411,6 +454,34 @@ class ProjectDetailViewController: UIViewController, UITableViewDelegate, UITabl
             
             //Assign the sorted taks back to _project.tasks
             project.tasks = taskArray
+            
+            //get the referenece to the projects database
+            let projectRef = db.collection("projects").document(project.projectID)
+            
+            //If the task is marked as complete, add it to the completed tasks array and check if the project is complete
+            if selectedTask.isCompleted{
+                completedTasks.append(selectedTask)
+                print("completed tasks just added : \(selectedTask)\nCompleted Task count is: \(completedTasks.count)\nTask array count is: \(taskArray.count)")
+                checkCompletedProject()
+            } else if !selectedTask.isCompleted {
+                //If the selected task was marked as incomplete, remove it from the completed array
+                completedTasks.removeAll { $0 == selectedTask }
+            }
+            
+            //If the project was completed and the task completed was marked as incomplete, change the projectIsCompleted variable to false
+            if projectIsCompleted && !selectedTask.isCompleted{
+                projectIsCompleted = false
+                
+                //Update the completed variable in the database
+                projectRef.updateData(["completed" : false]) { err in
+                    if let err = err {
+                        print("Error updating project completion: \(err.localizedDescription)")
+                    } else {
+                        print("Project completion was updated successfully")
+                    }
+                }
+                
+            }
             
             updateUI()
             

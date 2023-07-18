@@ -29,6 +29,8 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     var remaining = 0.00
     
+    var filteredProjects = [[Project](), [Project]()]
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,6 +50,11 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         //Check if the current user has any projects saved
         getCurrentUserAndProjects()
         
+    }
+    
+    func filterProjectsByCompletion(){
+        filteredProjects[0] = projects.filter({ $0.completed == false })
+        filteredProjects[1] = projects.filter({ $0.completed == true })
     }
     
     
@@ -84,6 +91,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
                                         self.projects.append(project)
                                         
                                         DispatchQueue.main.async {
+                                            self.filterProjectsByCompletion()
                                             self.updateProjectUI()
                                             self.projects_tableView.reloadData()
                                         }
@@ -120,13 +128,19 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         } else {
             // If tableView is not in editing mode, remove the delete button
             editButton.setTitle("Edit", for: .normal)
-            navigationItem.rightBarButtonItem = nil
+            DispatchQueue.main.async {
+                self.navigationItem.rightBarButtonItem = nil
+            }
         }
     }
     
     //MARK: Table View Set Up
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return projects.count
+        return filteredProjects[section].count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -135,7 +149,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         }
         
         //Get the current project
-        let project = projects[indexPath.row]
+        let project = filteredProjects[indexPath.section][indexPath.row]
         
         //Set the properites
         cell.projectName_label.text = project.title
@@ -150,7 +164,12 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         }
         print("Remaining budget is \(remainingBudget)")
         let remainingBudgetString = HelperMethods.formatNumberToCurrency(value: remainingBudget)
-        cell.remainingBudget_label.text = "\(remainingBudgetString) Left"
+        if project.completed {
+            cell.remainingBudget_label.text = "DONE"
+        } else {
+            cell.remainingBudget_label.text = "\(remainingBudgetString) Left"
+        }
+        
         
         return cell
     }
@@ -159,13 +178,64 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
         return 86
     }
     
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        switch section {
+        case 0:
+            return "In Progress:"
+        case 1:
+            return "Completed:"
+        default:
+            return ""
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 30
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+       
+        
+        let headerView = UIView()
+        let headerLabel = UILabel(frame: CGRect(x: 16, y: 0, width: projects_tableView.bounds.size.width, height: projects_tableView.bounds.size.height))
+        headerLabel.font = UIFont.boldSystemFont(ofSize: 25)
+        headerLabel.text = self.tableView(projects_tableView, titleForHeaderInSection: section)
+        
+        //Set the different colors for the sections
+        if section == 0 {
+            headerView.backgroundColor = UIColor.darkBrown
+            headerLabel.textColor = UIColor.cremeWhite
+        } else if section == 1 {
+            headerView.backgroundColor = UIColor.darkGreen
+            headerLabel.textColor = UIColor.darkBrown
+        }
+        
+        headerLabel.sizeToFit()
+        headerView.addSubview(headerLabel)
+        return headerView
+        
+    }
+    
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let footerView = UIView()
+        footerView.backgroundColor = UIColor.cremeWhite
+
+        return footerView
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 50
+    }
+
+    
     var goToDetails = false
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if !projects_tableView.isEditing {
             print("DidSelectRowAt was called")
-            //Open detail view for that specific project
-            let selectedProject = projects[indexPath.row]
+            // Open detail view for that specific project
+            // Get the correct project using indexPath.section and indexPath.row
+            let selectedProject = filteredProjects[indexPath.section][indexPath.row]
             print("Selected Project: \(selectedProject.title)")
             self.selectedProject = selectedProject
             print("Self.selectedProject? equals: \(self.selectedProject?.title ?? "nil")")
@@ -176,6 +246,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
             goToDetails = false
         }
     }
+
     var goToNewProject = false
     override func shouldPerformSegue(withIdentifier identifier: String, sender: Any?) -> Bool {
         if identifier == "toDetails"{
@@ -234,7 +305,20 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
                 self.present(alert, animated: true)
                 
             } else {
-                //Deletion successfull
+                //Deletion successfull. Now delete the project from the users database
+                guard let userID = self.currentUser?.uid else {print("User is nil"); return}
+                
+                let userRef = self.db.collection("users").document(userID)
+                
+                userRef.updateData([
+                    "projects": FieldValue.arrayRemove([project.projectID])
+                       ]) { err in
+                           if let err = err {
+                               print("Error updating user: \(err.localizedDescription)")
+                           } else {
+                               print("User updated successfully")
+                           }
+                       }
                 
                 //delete from the table view
                 self.projects_tableView.deleteRows(at: [projectIndexPath], with: .automatic)
@@ -287,7 +371,7 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
             // Get the new view controller using segue.destination.
             let destinationVC = segue.destination as! ProjectDetailViewController
             // Pass the selected object to the new view controller.
-            destinationVC._project = sender as? Project
+            destinationVC.sentProject = sender as? Project
         }
     }
     

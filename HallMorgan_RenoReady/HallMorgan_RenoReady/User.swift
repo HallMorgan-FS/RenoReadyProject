@@ -39,8 +39,9 @@ class Project {
     var photos: [UIImage]?
     var photoIds: [String]?
     var taskIds: [String]?
+    var completed: Bool
     
-    init(projectID: String, title: String, category: String, designNotes: String? = nil, deadline: String, budget: Double, tasks: [Task]? = nil, photos: [UIImage]? = nil, photoIds: [String]? = nil, taskIds: [String]? = nil ) {
+    init(projectID: String, title: String, category: String, designNotes: String? = nil, deadline: String, budget: Double, tasks: [Task]? = nil, photos: [UIImage]? = nil, photoIds: [String]? = nil, taskIds: [String]? = nil, completed: Bool ) {
         self.projectID = projectID
         self.title = title
         self.category = category
@@ -51,10 +52,11 @@ class Project {
         self.photos = photos
         self.photoIds = photoIds
         self.taskIds = taskIds
+        self.completed = completed
     }
     
-    convenience init(projectID: String, title: String, category: String, deadline: String, budget: Double) {
-        self.init(projectID: projectID, title: title, category: category, designNotes: nil, deadline: deadline, budget: budget, tasks: nil, photos: nil, photoIds: nil, taskIds: nil)
+    convenience init(projectID: String, title: String, category: String, deadline: String, budget: Double, completed: Bool) {
+        self.init(projectID: projectID, title: title, category: category, designNotes: nil, deadline: deadline, budget: budget, tasks: nil, photos: nil, photoIds: nil, taskIds: nil, completed: completed)
     }
     
     func toDictionary() -> [String: Any] {
@@ -64,7 +66,8 @@ class Project {
             "category": self.category,
             "deadline": self.deadline,
             "budget": self.budget,
-            "totalSpent": self.totalSpent
+            "totalSpent": self.totalSpent,
+            "completed" : self.completed
         ]
         
         // Only add these properties to the dictionary if they're not nil
@@ -83,7 +86,7 @@ class Project {
     
 }
 
-class Task {
+class Task: Equatable {
     var taskId: String
     var task: String
     var isCompleted: Bool
@@ -105,5 +108,9 @@ class Task {
             "isCompleted" : self.isCompleted,
             "taskCost" : self.taskCost
         ]
+    }
+    
+    static func ==(lhs: Task, rhs: Task) -> Bool {
+        return lhs.taskId == rhs.taskId
     }
 }

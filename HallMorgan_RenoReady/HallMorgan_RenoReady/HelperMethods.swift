@@ -111,7 +111,7 @@ class HelperMethods {
             textField.placeholder = "What is the task?"
         }
         alert.addTextField { (textField) in
-            textField.placeholder = "How much will task cost?"
+            textField.placeholder = "Task cost (ex: $50 or 50)"
         }
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
@@ -174,8 +174,9 @@ class HelperMethods {
             let taskIds = projectData["tasks"] as? [String]
             let photoIds = projectData["photoIds"] as? [String]
             let totalSpent = projectData["totalSpent"] as? Double ?? 0.00
+            let completed = projectData["completed"] as? Bool ?? false
             
-            project = Project(projectID: projectId, title: title, category: category, designNotes: designNotes, deadline: deadline, budget: budget, tasks: nil, photoIds: photoIds, taskIds: taskIds)
+            project = Project(projectID: projectId, title: title, category: category, designNotes: designNotes, deadline: deadline, budget: budget, tasks: nil, photoIds: photoIds, taskIds: taskIds, completed: completed)
             project.totalSpent = totalSpent
             
             return project
@@ -349,7 +350,7 @@ class HelperMethods {
     }
     
     //MARK: SAVE NOTES TO FIRESTORE
-    static func saveNotesToFirestore(on vc:  UIViewController,notes: String, project: Project){
+    static func saveNotesToFirestore(on vc: UIViewController, notes: String, project: Project){
         let docRef = Firestore.firestore().collection("projects").document(project.projectID)
         docRef.updateData([
             "designNotes": notes

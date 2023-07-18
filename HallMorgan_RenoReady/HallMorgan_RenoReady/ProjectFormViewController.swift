@@ -57,6 +57,10 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
     
     var savedProject: Project?
     
+    var projectIsCompleted: Bool = false
+    
+    var completedTasks = [Task]()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -111,7 +115,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         date_textField.inputAccessoryView = toolbar
         
         if #available(iOS 16.0, *) {
-            let saveButton = UIBarButtonItem(title: "Save", image: UIImage(systemName: "square.and.arrow.down.fill"), primaryAction: UIAction(handler: { [weak self] _ in
+            let saveButton = UIBarButtonItem(title: "Save", image: nil, primaryAction: UIAction(handler: { [weak self] _ in
                 self?.perform(#selector(self?.saveTapped))
             }))
             navigationItem.rightBarButtonItem = saveButton
@@ -295,7 +299,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             textField.placeholder = "What is the task?"
         }
         alert.addTextField { (textField) in
-            textField.placeholder = "How much will task cost?"
+            textField.placeholder = "Task cost (ex: $50 or 50)"
         }
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -350,10 +354,29 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             deleteTask_Button.isHidden = false
             cancelEditingButton.isHidden = true
             finishDeleteTasksButton.isHidden = true
+            
         }
         
         //Reload the tableView
         tableView.reloadData()
+    }
+    
+    func checkCompletedProject(){
+        if completedTasks == tasksArray {
+            //show alert asking if the project should be marked as completed
+            let alert = UIAlertController(title: "All Tasks Complete", message: "All tasks have been marked as complete! Would you like to mark this project as completed?", preferredStyle: .alert)
+            
+            let yesAction = UIAlertAction(title: "Yes", style: .default) { _ in
+                self.projectIsCompleted = true
+            }
+            
+            let cancelAction = UIAlertAction(title: "No", style: .cancel)
+            
+            alert.addAction(yesAction)
+            alert.addAction(cancelAction)
+            
+            present(alert, animated: true)
+        }
     }
     
     func updateUI(_project: Project){
@@ -378,6 +401,13 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         if let tasks = _project.tasks, !tasks.isEmpty {
             // Display the tasks
             tasksArray = tasks
+            
+            for task in tasksArray {
+                if task.isCompleted {
+                    completedTasks.append(task)
+                }
+            }
+            
         }
         
         //Update the tableView
@@ -391,23 +421,23 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
         let (budgetIsFilled, budget) = HelperMethods.textNotEmpty(budget_textField)
         let (dateIsFilled, deadlineText) = HelperMethods.textNotEmpty(date_textField)
         print("Category equals \(category) and button text equals \(category_button.titleLabel?.text ?? "nil")")
-        if category == "" {
-            HelperMethods.showBasicErrorAlert(on: self, title: "No Category Selected", message: "A category must be selected in order to save a project")
-            projectFinished = false
-            return
+        if category_button.titleLabel?.text == "Kitchen" {
+            category = "Kitchen"
         }
         
         if titleIsFilled && budgetIsFilled && dateIsFilled && category != "" {
             // If the project title, category, deadline, and budget are filled in, check that the budget can be a valid Double variable
-            if let budgetDouble = Double(budget) {
+            let cleanBudgetText = budget.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+            if let budgetDouble = Double(cleanBudgetText) {
                 if isEditMode {
                     // Update the existing project
                     guard let existingProject = project else {
+                        hideLoadingView()
                         print("Project is nil")
                         return
                     }
                     
-                    let updatedProject = Project(projectID: existingProject.projectID, title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray)
+                    let updatedProject = Project(projectID: existingProject.projectID, title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray, completed: false)
                     print("Edited project's total spent is currently \(updatedProject.totalSpent) before updating")
                     updatedProject.totalSpent = totalSpent
                     print("Edited project's total spent is now \(updatedProject.totalSpent) after updating")
@@ -433,7 +463,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                     }
                 } else {
                     // Create a new project
-                    let newProject = Project(projectID: "", title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray)
+                    let newProject = Project(projectID: "", title: projectTitle, category: category, deadline: deadlineText, budget: budgetDouble, tasks: tasksArray, completed: false)
                     newProject.totalSpent = totalSpent
                     print("New project's total spent is \(newProject.totalSpent)")
                     handleDesignNotes(newProject)
@@ -464,6 +494,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                 projectFinished = false
             }
         } else {
+            hideLoadingView()
             // Something isn't input correctly
             print("Entries were not verified")
             let message = "Project Title, Project Category, Deadline, and Budget fields must be entered in order to create a new project"
@@ -672,6 +703,18 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
             //Sort tasks so that the completed tasks are at the bottom
             tasksArray.sort { !$0.isCompleted && $1.isCompleted }
             
+            if selectedTask.isCompleted{
+                completedTasks.append(selectedTask)
+                checkCompletedProject()
+            } else if !selectedTask.isCompleted {
+                completedTasks.removeAll { $0 == selectedTask }
+            }
+            
+            //If the project was completed and the task completed was marked as incomplete, change the projectIsCompleted variable to false
+            if projectIsCompleted && !selectedTask.isCompleted{
+                projectIsCompleted = false
+            }
+            
             print("Calling ReloadTableView")
             tableView.reloadData()
             print("ReloadTableView has been called")
@@ -691,7 +734,7 @@ class ProjectFormViewController: UIViewController, UITableViewDelegate, UITableV
                let project = sender as? Project,
                let detailVC = segue.destination as? ProjectDetailViewController{
                 
-            detailVC._project = project
+            detailVC.sentProject = project
             
             }
     }

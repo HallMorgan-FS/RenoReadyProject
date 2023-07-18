@@ -26,12 +26,29 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
     
     @IBOutlet weak var scrollView: UIScrollView!
     
+    var loadingView: UIView?
+    
     var didSignUp = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        
+        //set password visibily toggle based on eye being touched
+        //create a button
+        let passVisButton = UIButton(type: .custom)
+        
+        //Set the image for the button
+        passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        //Add a target for this button
+        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+        //set constraints for button
+        passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+        //Add the button to the text field's right view
+        password_textField.rightView = passVisButton
+        //Set the text field's right view mode to always appear
+        password_textField.rightViewMode = .always
         
         //Add observers to only scroll while the keyboard is showing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -50,8 +67,26 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
     }
     
+    @objc func togglePasswordVisibility(){
+        //Change the secure text entry property of the textField
+        password_textField.isSecureTextEntry = !password_textField.isSecureTextEntry
+        
+        //Get a reference to the button
+        let passVisButton = password_textField.rightView as! UIButton
+        
+        //Set the image based on whether the pasword is currently visable
+        if password_textField.isSecureTextEntry{
+            passVisButton.setImage(UIImage(systemName: "eye.fill"), for: .normal)
+        } else {
+            passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        }
+    }
+    
     
     @IBAction func signUpTapped(_ sender: UIButton) {
+        
+        //Show the loading screen
+        showLoadingView()
         
         var errorMessages = [String]()
         
@@ -89,6 +124,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         Auth.auth().createUser(withEmail: _email, password: _password) { authResult, error in
             // Handle any errors
             if let error = error {
+                self.hideLoadingView()
                 self.showAlert(error.localizedDescription)
             }
             
@@ -100,6 +136,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
                 let _user = User(email: _email, profilePhoto: self.profilePicture.image ?? defaultProfileImage)
                 // Add the user's profile photo to Firebase Storage and add user to Firestore
                 self.addUserToFirestore(uid: uid, user: _user) {
+                    self.hideLoadingView()
                     // Completion closure after user has been added to Firestore
                     self.didSignUp = true
                     self.performSegue(withIdentifier: "signUpDone", sender: self)
@@ -134,6 +171,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
             // Once the upload is complete, get the download URL
             userPhotosRef.downloadURL { url, error in
                 if let urlError = error {
+                    self.hideLoadingView()
                     self.showAlert("Error getting download URL: \(urlError.localizedDescription)")
                     return
                 }
@@ -153,6 +191,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
                 
                 db.collection("users").document(uid).setData(userData) { error in
                     if let firestoreError = error {
+                        self.hideLoadingView()
                         print("Error adding user to Firestore: \(firestoreError)")
                         self.didSignUp = false
                         return
@@ -326,6 +365,36 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         let alertAction = UIAlertAction(title: "Try Again", style: .default)
         alert.addAction(alertAction)
         present(alert, animated: true)
+    }
+    
+    func showLoadingView() {
+        // Create the loading view
+        loadingView = UIView(frame: view.bounds)
+        loadingView?.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        
+        // Add the label to the loading view
+        let label = UILabel(frame: CGRect(x: 0, y: 0, width: 200, height: 30))
+        label.text = "Saving your project..."
+        label.textColor = UIColor.white
+        label.textAlignment = .center
+        label.center = loadingView?.center ?? CGPoint.zero
+        loadingView?.addSubview(label)
+
+        // Add a loading indicator to the view
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.center = loadingView?.center ?? CGPoint.zero
+        activityIndicator.startAnimating()
+        loadingView?.addSubview(activityIndicator)
+
+        // Add the loading view as a subview and bring it to the front
+        view.addSubview(loadingView!)
+        view.bringSubviewToFront(loadingView!)
+    }
+    
+    func hideLoadingView() {
+        // Remove the loading view from the view hierarchy
+        loadingView?.removeFromSuperview()
+        loadingView = nil
     }
 
     
