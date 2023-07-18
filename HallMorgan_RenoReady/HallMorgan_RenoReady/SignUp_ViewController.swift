@@ -32,27 +32,16 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        print("Sign up view controller viewDidLoad was called")
         // Do any additional setup after loading the view.
         
-        //set password visibily toggle based on eye being touched
-        //create a button
-        let passVisButton = UIButton(type: .custom)
         
-        //Set the image for the button
-        passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
-        //Add a target for this button
-        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
-        //set constraints for button
-        passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
-        //Add the button to the text field's right view
-        password_textField.rightView = passVisButton
-        //Set the text field's right view mode to always appear
-        password_textField.rightViewMode = .always
         
         //Add observers to only scroll while the keyboard is showing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+        setPassToggleButton()
         
         //Add tap gesture for the image view
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
@@ -67,12 +56,40 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
 
     }
     
+    //Set password toggle
+    func setPassToggleButton(){
+        //set password visibily toggle based on eye being touched
+        //create a button
+        let passVisButton = UIButton(type: .custom)
+        passVisButton.tintColor = UIColor.darkBrown
+        //Set the image for the button
+        passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        //Add a target for this button
+        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+        //set constraints for button
+        passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+        //Add the button to the text field's right view
+        password_textField.rightView = passVisButton
+        //Set the text field's right view mode to always appear
+        password_textField.rightViewMode = .always
+        
+        let confirmVisButton = UIButton(type: .custom)
+        confirmVisButton.tintColor = UIColor.darkBrown
+        
+        confirmVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        confirmVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+        confirmVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+        confirmPassword_textField.rightView = passVisButton
+        confirmPassword_textField.rightViewMode = .always
+    }
+    
     @objc func togglePasswordVisibility(){
         //Change the secure text entry property of the textField
         password_textField.isSecureTextEntry = !password_textField.isSecureTextEntry
         
         //Get a reference to the button
         let passVisButton = password_textField.rightView as! UIButton
+        let confirmVisButton = confirmPassword_textField.rightView as! UIButton
         
         //Set the image based on whether the pasword is currently visable
         if password_textField.isSecureTextEntry{

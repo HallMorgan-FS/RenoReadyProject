@@ -57,6 +57,7 @@ class LoginViewController: UIViewController {
         passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
         //Add a target for this button
         passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+        passVisButton.tintColor = UIColor.darkBrown
         //set constraints for button
         passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
         //Add the button to the text field's right view
@@ -90,8 +91,11 @@ class LoginViewController: UIViewController {
         password_textField.isSecureTextEntry = true
     }
 
+    var signUp = true
     @IBAction func newUserSignUpTapped(_ sender: UIButton) {
         //Go to SignUp_ViewController
+        print("Sign up tapped")
+        //performSegue(withIdentifier: "toSignUp", sender: self)
     }
     
     @IBAction func signInTapped(_ sender: UIButton) {
