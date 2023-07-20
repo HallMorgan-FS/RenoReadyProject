@@ -74,7 +74,7 @@
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="newUserSignUpTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="wSB-VW-4mc"/>
-                                    <segue destination="4bh-DM-4hb" kind="show" identifier="toSignUp" id="yDg-Xs-AaH"/>
+                                    <segue destination="4bh-DM-4hb" kind="show" id="60r-aO-JMd"/>
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="NEW USER?" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cJJ-1c-x0P">
@@ -1269,7 +1269,7 @@ Use this space to enter colors needed, measurements, number of items, types of m
         <!--Sign Up-->
         <scene sceneID="lNP-xf-6Ll">
             <objects>
-                <viewController id="4bh-DM-4hb" customClass="SignUp_ViewController" customModule="HallMorgan_RenoReady" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="signUpViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="4bh-DM-4hb" customClass="SignUp_ViewController" customModule="HallMorgan_RenoReady" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="77o-Hl-5bO">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1471,7 +1471,7 @@ Use this space to enter colors needed, measurements, number of items, types of m
     <inferredMetricsTieBreakers>
         <segue reference="L9x-ka-yud"/>
         <segue reference="KQ6-In-eBt"/>
-        <segue reference="b7i-KD-G7n"/>
+        <segue reference="AV6-ga-9K9"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="bathroom" width="300" height="300"/>

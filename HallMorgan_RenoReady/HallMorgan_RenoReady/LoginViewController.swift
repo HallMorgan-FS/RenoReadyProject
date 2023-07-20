@@ -95,7 +95,16 @@ class LoginViewController: UIViewController {
     @IBAction func newUserSignUpTapped(_ sender: UIButton) {
         //Go to SignUp_ViewController
         print("Sign up tapped")
-        //performSegue(withIdentifier: "toSignUp", sender: self)
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let signUpViewController = storyboard.instantiateViewController(withIdentifier: "signUpViewController") as? SignUp_ViewController else {
+            return
+        }
+        
+        let navigationController = UINavigationController(rootViewController: signUpViewController)
+        
+        if let sceneDelegate = self.view.window?.windowScene?.delegate as? SceneDelegate {
+            sceneDelegate.window?.rootViewController = navigationController
+        }
     }
     
     @IBAction func signInTapped(_ sender: UIButton) {

@@ -35,8 +35,6 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         print("Sign up view controller viewDidLoad was called")
         // Do any additional setup after loading the view.
         
-        
-        
         //Add observers to only scroll while the keyboard is showing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -57,31 +55,30 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
     }
     
     //Set password toggle
-    func setPassToggleButton(){
-        //set password visibily toggle based on eye being touched
-        //create a button
+    func setPassToggleButton() {
+        // Create password toggle button
         let passVisButton = UIButton(type: .custom)
         passVisButton.tintColor = UIColor.darkBrown
-        //Set the image for the button
         passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
-        //Add a target for this button
-        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
-        //set constraints for button
         passVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
-        //Add the button to the text field's right view
+        passVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
+
+        // Set password toggle button for password_textField
         password_textField.rightView = passVisButton
-        //Set the text field's right view mode to always appear
         password_textField.rightViewMode = .always
-        
+
+        // Create confirm password toggle button
         let confirmVisButton = UIButton(type: .custom)
         confirmVisButton.tintColor = UIColor.darkBrown
-        
         confirmVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
-        confirmVisButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
         confirmVisButton.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
-        confirmPassword_textField.rightView = passVisButton
+        confirmVisButton.addTarget(self, action: #selector(toggleConfirmPasswordVisibility), for: .touchUpInside)
+
+        // Set confirm password toggle button for confirmPassword_textField
+        confirmPassword_textField.rightView = confirmVisButton
         confirmPassword_textField.rightViewMode = .always
     }
+
     
     @objc func togglePasswordVisibility(){
         //Change the secure text entry property of the textField
@@ -89,13 +86,27 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         
         //Get a reference to the button
         let passVisButton = password_textField.rightView as! UIButton
-        let confirmVisButton = confirmPassword_textField.rightView as! UIButton
         
         //Set the image based on whether the pasword is currently visable
         if password_textField.isSecureTextEntry{
-            passVisButton.setImage(UIImage(systemName: "eye.fill"), for: .normal)
-        } else {
             passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        } else {
+            passVisButton.setImage(UIImage(systemName: "eye.fill"), for: .normal)
+        }
+    }
+    
+    @objc func toggleConfirmPasswordVisibility(){
+        //Change the secure text entry property of the textField
+        confirmPassword_textField.isSecureTextEntry = !confirmPassword_textField.isSecureTextEntry
+        
+        //Get a reference to the button
+        let passVisButton = confirmPassword_textField.rightView as! UIButton
+        
+        //Set the image based on whether the pasword is currently visable
+        if confirmPassword_textField.isSecureTextEntry{
+            passVisButton.setImage(UIImage(systemName: "eye.slash.fill"), for: .normal)
+        } else {
+            passVisButton.setImage(UIImage(systemName: "eye.fill"), for: .normal)
         }
     }
     
@@ -391,7 +402,7 @@ class SignUp_ViewController: UIViewController, UITextFieldDelegate, UIImagePicke
         
         // Add the label to the loading view
         let label = UILabel(frame: CGRect(x: 0, y: 0, width: 200, height: 30))
-        label.text = "Saving your project..."
+        label.text = "Creating Your Account..."
         label.textColor = UIColor.white
         label.textAlignment = .center
         label.center = loadingView?.center ?? CGPoint.zero

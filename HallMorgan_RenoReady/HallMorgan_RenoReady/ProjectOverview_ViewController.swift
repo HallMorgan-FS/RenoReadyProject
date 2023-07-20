@@ -265,14 +265,18 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
     
     @objc func deleteSelectedProjects() {
         if let selectedRows = projects_tableView.indexPathsForSelectedRows {
-            //send alert asking if the user is sure they want to delete the selected project[s]
+            // send alert asking if the user is sure they want to delete the selected project[s]
             let alert = UIAlertController(title: "Delete Project(s)", message: "Are you sure you want to delete the selected project(s)? This action cannot be undone.", preferredStyle: .alert)
 
             let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { _ in
                 // Reverse sort the indexes so we delete from the end of the list
-                let indexes = selectedRows.map { $0.row }.sorted(by: >)
-                for index in indexes {
-                    self.deleteProject(projectIndexPath: IndexPath(row: index, section: 0))
+                let sections = Array(Set(selectedRows.map { $0.section })) // Get unique sections
+                for section in sections {
+                    let rowsInSection = selectedRows.filter { $0.section == section }.map { $0.row }.sorted(by: >)
+                    for row in rowsInSection {
+                        let projectIndexPath = IndexPath(row: row, section: section)
+                        self.deleteProject(projectIndexPath: projectIndexPath)
+                    }
                 }
             }
 
@@ -284,51 +288,51 @@ class ProjectOverview_ViewController: UIViewController, UITableViewDataSource, U
             present(alert, animated: true)
         }
     }
+
     
-    func deleteProject(projectIndexPath: IndexPath){
-        
-        let project = projects[projectIndexPath.row]
-        
-        //remove project from array
-        projects.remove(at: projectIndexPath.row)
-        
-        //Remove project from firebase
+    func deleteProject(projectIndexPath: IndexPath) {
+        let project = filteredProjects[projectIndexPath.section][projectIndexPath.row]
+        // Remove project from array
+        filteredProjects[projectIndexPath.section].remove(at: projectIndexPath.row)
+
+        // Remove project from Firebase
         let projectRef = db.collection("projects").document(project.projectID)
-        
+
         projectRef.delete { err in
             if let err = err {
-                print("Error removing document from firebase: \(err.localizedDescription)")
-                let alert = UIAlertController(title: "Something Went Wrong", message: "The selected project(s) were unable to be deleted. We are sorry for inconvience. Please try again.", preferredStyle: .alert)
+                print("Error removing document from Firebase: \(err.localizedDescription)")
+                let alert = UIAlertController(title: "Something Went Wrong", message: "The selected project(s) were unable to be deleted. We are sorry for the inconvenience. Please try again.", preferredStyle: .alert)
                 let okAction = UIAlertAction(title: "OK", style: .default)
-                
+
                 alert.addAction(okAction)
                 self.present(alert, animated: true)
-                
             } else {
-                //Deletion successfull. Now delete the project from the users database
-                guard let userID = self.currentUser?.uid else {print("User is nil"); return}
-                
+                // Deletion successful. Now delete the project from the user's database
+                guard let userID = self.currentUser?.uid else {
+                    print("User is nil")
+                    return
+                }
+
                 let userRef = self.db.collection("users").document(userID)
-                
+
                 userRef.updateData([
                     "projects": FieldValue.arrayRemove([project.projectID])
-                       ]) { err in
-                           if let err = err {
-                               print("Error updating user: \(err.localizedDescription)")
-                           } else {
-                               print("User updated successfully")
-                           }
-                       }
-                
-                //delete from the table view
+                ]) { err in
+                    if let err = err {
+                        print("Error updating user: \(err.localizedDescription)")
+                    } else {
+                        print("User updated successfully")
+                    }
+                }
+
+                // Delete from the table view
                 self.projects_tableView.deleteRows(at: [projectIndexPath], with: .automatic)
-                
+
                 self.updateProjectUI()
             }
-            
         }
-        
     }
+
     
     //MARK: UI Update
     
