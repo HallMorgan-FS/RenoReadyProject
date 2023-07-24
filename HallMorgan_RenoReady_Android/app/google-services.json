@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "457065869229",
+    "project_id": "renoready-android",
+    "storage_bucket": "renoready-android.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:457065869229:android:e273c4a3ba88fa0820bb24",
+        "android_client_info": {
+          "package_name": "com.example.hallmorgan_renoready_android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "457065869229-rhhjpd5doh1l8hvpkrjir1n06unc3iqi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAemkP6HfavXIvjoEl4tc1B2i5fFV7IEuQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "457065869229-rhhjpd5doh1l8hvpkrjir1n06unc3iqi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

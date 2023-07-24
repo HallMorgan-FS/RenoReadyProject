@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/creme_white"
+    android:padding="20dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp">
+
+        <ImageView
+            android:id="@+id/profilePic_profileScreen"
+            android:layout_width="130dp"
+            android:layout_height="130dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/defaultprofilepic"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="@string/profile_picture"
+            android:clickable="true"/>
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="4dp"
+            android:src="@drawable/ic_camera"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline2"
+            app:layout_constraintStart_toStartOf="@+id/guideline"
+            android:contentDescription="@string/camera_icon_description" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="232dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="282dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="12dp"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="12dp">
+
+        <TextView
+            style="@style/textViewStyle.label"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:text="@string/email" />
+
+        <TextView
+            android:id="@+id/userEmail_profile"
+            style="@style/textViewStyle.label"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="@string/email_hint"
+            android:gravity="end"/>
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="40dp"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="12dp">
+
+        <TextView
+            style="@style/textViewStyle.label"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:text="@string/password" />
+
+        <TextView
+            style="@style/textViewStyle.label"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="@string/password_hint"
+            android:gravity="end"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/changeEmail_button"
+        android:text="@string/change_email"
+        style="@style/editProfileButtonStyle"/>
+
+    <Button
+        android:id="@+id/changePassword_button"
+        android:text="@string/change_password"
+        style="@style/editProfileButtonStyle" />
+
+    <Button
+        android:id="@+id/logout_button"
+        android:text="@string/logout"
+        style="@style/editProfileButtonStyle" />
+
+    <Button
+        android:id="@+id/deleteAccount_button"
+        android:text="@string/delete_account"
+        style="@style/editProfileButtonStyle"
+        android:layout_marginTop="100dp"
+        android:textColor="@color/dark_red"/>
+
+
+
+
+
+</LinearLayout>

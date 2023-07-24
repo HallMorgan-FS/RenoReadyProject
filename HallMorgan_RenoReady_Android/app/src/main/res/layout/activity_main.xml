@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical"
+    android:background="@color/light_blue">
+
+    <ImageView
+        android:layout_marginTop="10dp"
+        android:layout_width="300dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="@string/app_logo"
+        android:src="@drawable/renoready_logo"
+        />
+
+    <TextView
+        android:layout_marginTop="10dp"
+        android:text="@string/email"
+        style="@style/textViewStyle.label" />
+
+    <EditText
+        android:id="@+id/email_editText"
+        android:hint="@string/placement_email"
+        android:inputType="textEmailAddress"
+        style="@style/editTextStyle"
+        android:importantForAutofill="no"/>
+
+    <TextView
+        android:layout_marginTop="20dp"
+        android:text="@string/password"
+        style="@style/textViewStyle.label" />
+
+    <EditText
+        android:id="@+id/password_editText"
+        android:hint="@string/placementText_password"
+        android:inputType="textPassword"
+        style="@style/editTextStyle"
+        android:importantForAutofill="no"/>
+
+    <Button
+        android:id="@+id/forgotPass_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/light_blue"
+        android:text="@string/forgot_password"
+        android:textColor="@color/black"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"/>
+
+    <Button
+        android:id="@+id/signIn_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sign_in"
+        android:background="@drawable/brown_button_rounded_corners"
+        style="@style/bigButtonStyle"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:text="@string/new_user"
+        android:textSize="18sp"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="center_horizontal"/>
+
+    <Button
+        android:id="@+id/signUp_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sign_up"
+        android:backgroundTint="@color/light_blue"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:layout_gravity="center_horizontal"/>
+
+
+</LinearLayout>

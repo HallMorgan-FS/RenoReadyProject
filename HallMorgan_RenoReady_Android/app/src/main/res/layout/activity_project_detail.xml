@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/creme_white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="25dp"
+            android:gravity="center_horizontal"
+            tools:ignore="UseCompoundDrawables">
+
+            <ImageView
+                android:id="@+id/category_icon_details"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@drawable/kitchen"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/category_icon_description"/>
+
+
+            <TextView
+                android:id="@+id/project_title_label_details"
+                style="@style/textViewStyle.label"
+                android:textColor="@color/dark_brown"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:text="@string/deadline_label_hint" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="12dp"
+            android:paddingTop="12dp">
+
+           <TextView
+                style="@style/textViewStyle.label.brown"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:text="@string/current_budget_label" />
+
+            <TextView
+                android:id="@+id/project_budget_details"
+                style="@style/textViewStyle.label.brown"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:text="@string/budget_text"
+                android:gravity="center"/>
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/taskList_fragment_container_details"
+            android:layout_width="match_parent"
+            android:layout_height="450dp">
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</ScrollView>

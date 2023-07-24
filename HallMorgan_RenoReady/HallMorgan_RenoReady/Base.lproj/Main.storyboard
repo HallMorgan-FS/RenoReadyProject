@@ -420,7 +420,7 @@
                                             </label>
                                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xKr-LL-h6y">
                                                 <rect key="frame" x="157.66666666666666" y="440.33333333333337" width="75.666666666666657" height="35"/>
-                                                <color key="tintColor" red="0.65877990722656254" green="0.15491510209880033" blue="0.11713621149306991" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                                <color key="tintColor" red="0.6588235294117647" green="0.15686274509803921" blue="0.11764705882352941" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="filled" title="Delete"/>
                                                 <userDefinedRuntimeAttributes>
@@ -1471,7 +1471,7 @@ Use this space to enter colors needed, measurements, number of items, types of m
     <inferredMetricsTieBreakers>
         <segue reference="L9x-ka-yud"/>
         <segue reference="KQ6-In-eBt"/>
-        <segue reference="AV6-ga-9K9"/>
+        <segue reference="b7i-KD-G7n"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="bathroom" width="300" height="300"/>

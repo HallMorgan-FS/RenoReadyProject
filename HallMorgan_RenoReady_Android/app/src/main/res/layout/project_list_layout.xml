@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:ignore="UseCompoundDrawables">
+
+    <ImageView
+        android:id="@+id/project_list_category_icon"
+        android:layout_width="65dp"
+        android:src="@drawable/kitchen"
+        android:layout_height="65dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/category_icon_description" />
+
+    <TextView
+        android:id="@+id/project_list_title"
+        style="@style/textViewStyle.label"
+        android:text="@string/project_name_placeholder"
+        android:textColor="@color/dark_brown"
+        android:layout_gravity="center"/>
+
+</LinearLayout>

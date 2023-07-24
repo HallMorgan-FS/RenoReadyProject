@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/creme_white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="25dp">
+
+            <TextView
+                style="@style/textViewStyle.label.brown"
+                android:text="@string/project_name_label" />
+
+            <EditText
+                android:id="@+id/project_name_et"
+                style="@style/editTextStyle.form"
+                android:hint="@string/name_hint"
+                android:importantForAutofill="no"
+                android:inputType="textPersonName"
+                android:textSize="18sp"
+                tools:ignore="TouchTargetSizeCheck" />
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="25dp">
+
+            <TextView
+                style="@style/textViewStyle.label.brown"
+                android:layout_width="53dp"
+                android:text="@string/category_label" />
+
+            <Button
+                android:id="@+id/category_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="@color/white"
+                android:textColor="@color/black"
+                android:text="@string/category_button_text"/>
+            
+            <ImageView
+                android:id="@+id/category_icon"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@drawable/kitchen"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/category_icon_description"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="25dp"
+            android:paddingTop="25dp">
+
+            <TextView
+                style="@style/textViewStyle.label.brown"
+                android:layout_width="49dp"
+                android:text="@string/current_budget_label" />
+
+            <EditText
+                android:id="@+id/budget_et"
+                style="@style/editTextStyle.form"
+                android:layout_marginEnd="50dp"
+                android:hint="@string/budget_hint"
+                android:importantForAutofill="no"
+                android:inputType="numberDecimal"
+                android:textSize="18sp"
+                tools:ignore="TouchTargetSizeCheck" />
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/taskList_fragment_container_form"
+            android:layout_width="match_parent"
+            android:layout_height="400dp">
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</ScrollView>

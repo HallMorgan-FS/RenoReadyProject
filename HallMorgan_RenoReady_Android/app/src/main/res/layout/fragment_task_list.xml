@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/creme_white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/textViewStyle.label.brown"
+            android:text="@string/task_list_label"
+            android:layout_weight="1.5"
+            android:layout_gravity="center_vertical"
+            />
+
+        <LinearLayout
+            android:id="@+id/add_remove_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_weight="1"
+            android:layout_marginEnd="0dp"
+            android:gravity="end"
+            android:visibility="visible">
+
+            <Button
+                android:id="@+id/addTaskButton"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:text="@string/add"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textSize="22sp"
+                android:backgroundTint="@color/dark_blue"
+                style="?android:attr/buttonBarButtonStyle"
+                android:textColor="@color/creme_white"/>
+
+            <Button
+                android:id="@+id/removeTaskButton"
+                android:layout_width="50dp"
+                android:layout_marginStart="4dp"
+                android:textSize="22sp"
+                android:layout_height="wrap_content"
+                android:text="@string/remove"
+                android:textStyle="bold"
+                android:textColor="@color/creme_white"
+                android:backgroundTint="@color/dark_brown"
+                style="?android:attr/buttonBarButtonStyle"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/delete_cancel_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_weight="1.5"
+            android:layout_marginEnd="0dp"
+            android:gravity="end"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/deleteTaskButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/delete"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textSize="18sp"
+                android:backgroundTint="@color/dark_red"
+                style="?android:attr/buttonBarButtonStyle"
+                android:textColor="@color/creme_white"/>
+
+            <Button
+                android:id="@+id/cancel_delete_button"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textSize="18sp"
+                android:layout_height="wrap_content"
+                android:text="@string/cancel"
+                android:textColor="@color/creme_white"
+                android:backgroundTint="@color/dark_blue"
+                style="?android:attr/buttonBarButtonStyle"
+                tools:ignore="ButtonOrder" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/tasks_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/no_tasks_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/textViewStyle.label"
+        android:layout_marginStart="0dp"
+        android:textColor="@color/dark_brown"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:paddingBottom="40dp"
+        android:text="@string/noTask_text"
+        android:visibility="visible"/>
+
+</LinearLayout>
