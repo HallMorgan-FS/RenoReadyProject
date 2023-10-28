@@ -22,7 +22,7 @@ This application is still under development and was created as a final project. 
 - Version Control: Git
 
 ### Installation and Setup
-1. **Close the Repository**
+1. **Clone the Repository**
    
    ```
    git clone https://github.com/HallMorgan-FS/RenoReadyProject.git
@@ -35,11 +35,6 @@ This application is still under development and was created as a final project. 
   - Open the Android project in Android Studio.
   - Sync Gradle and install required dependencies.
   - Build and run the project.
-
-### Usage
-
-- **iOS:** Navigate through the app using the tab bar at the bottom.
-- **Android**: Use the navigation drawer to switch between different sections.
 
 ### Code Examples
 
